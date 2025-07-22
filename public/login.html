@@ -2,7 +2,7 @@
  * @Author: Lieyan
  * @Date: 2025-07-22 15:03:21
  * @LastEditors: Lieyan
- * @LastEditTime: 2025-07-22 22:32:32
+ * @LastEditTime: 2025-07-23 00:56:40
  * @FilePath: /FireClassroom/public/login.html
  * @Description: 
  * @Contact: QQ: 2102177341  Website: lieyan.space  Github: @lieyan666
@@ -63,7 +63,7 @@
         }
     </style>
 </head>
-<body>
+<body class="light-mode">
     <div class="login-container">
         <h2>FireClassroom</h2>
         <p>管理员登录</p>
@@ -103,6 +103,12 @@
                 errorMessage.textContent = data.message || 'Login failed';
             }
         });
+    </script>
+    <script>
+        console.log('Computed --background-color:', getComputedStyle(document.body).getPropertyValue('--background-color'));
+        console.log('Computed --light-gray-color:', getComputedStyle(document.body).getPropertyValue('--light-gray-color'));
+        console.log('Computed --text-color:', getComputedStyle(document.body).getPropertyValue('--text-color'));
+        console.log('Computed --border-color:', getComputedStyle(document.body).getPropertyValue('--border-color'));
     </script>
 </body>
 </html>

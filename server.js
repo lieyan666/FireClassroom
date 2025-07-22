@@ -6,6 +6,7 @@ const cors = require('cors');
 const session = require('express-session');
 const useragent = require('useragent');
 const os = require('os');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,11 +44,27 @@ const DATA_DIR = path.join(__dirname, 'data');
 const SCHEDULE_FILE = path.join(DATA_DIR, 'schedule.csv');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 const COURSES_FILE = path.join(DATA_DIR, 'courses.json');
+const AUDIO_DIR = path.join(__dirname, 'public', 'audio');
 
-// 确保数据目录存在
+// 确保数据和音频目录存在
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
+if (!fs.existsSync(AUDIO_DIR)) {
+    fs.mkdirSync(AUDIO_DIR, { recursive: true });
+}
+
+// Multer 配置
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, AUDIO_DIR);
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+
+const upload = multer({ storage: storage });
 
 // 全局配置变量
 let appConfig = {};
@@ -299,6 +316,15 @@ mainRouter.get('/login', (req, res) => serveHtmlWithBaseTag(req, res, path.join(
 mainRouter.get('/admin', isAuthenticated, (req, res) => serveHtmlWithBaseTag(req, res, path.join(__dirname, 'public', 'admin.html')));
 
 // API 路由
+mainRouter.get('/api/public-config', (req, res) => {
+    if (appConfig) {
+        const { schoolName, timeSlots, weekdays, classStartBell, classEndBell } = appConfig;
+        res.json({ schoolName, timeSlots, weekdays, classStartBell, classEndBell });
+    } else {
+        res.status(500).json({ error: '无法读取配置文件' });
+    }
+});
+
 mainRouter.get('/api/config', isAuthenticated, (req, res) => {
     if (appConfig) {
         res.json(appConfig);
@@ -373,6 +399,34 @@ mainRouter.post('/api/schedule', isAuthenticated, (req, res) => {
     } catch (error) {
         console.error('课表更新失败:', error);
         res.status(500).json({ error: '课表更新失败' });
+    }
+});
+
+mainRouter.post('/api/upload-bells', isAuthenticated, upload.fields([
+    { name: 'classStartBell', maxCount: 1 },
+    { name: 'classEndBell', maxCount: 1 }
+]), (req, res) => {
+    try {
+        const updatedFields = {};
+        if (req.files['classStartBell'] && req.files['classStartBell'].length > 0) {
+            appConfig.classStartBell = req.files['classStartBell'][0].filename;
+            updatedFields.classStartBell = appConfig.classStartBell;
+        }
+        if (req.files['classEndBell'] && req.files['classEndBell'].length > 0) {
+            appConfig.classEndBell = req.files['classEndBell'][0].filename;
+            updatedFields.classEndBell = appConfig.classEndBell;
+        }
+
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(appConfig, null, 2));
+        
+        res.json({
+            success: true,
+            message: '铃声上传并保存成功',
+            ...updatedFields
+        });
+    } catch (error) {
+        console.error('铃声上传失败:', error);
+        res.status(500).json({ error: '铃声上传失败' });
     }
 });
 

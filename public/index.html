@@ -402,6 +402,9 @@
 
     <div id="version-info"></div>
 
+    <audio id="start-bell-audio" preload="auto"></audio>
+    <audio id="end-bell-audio" preload="auto"></audio>
+
     <script>
         // Encapsulate script logic to run after the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
@@ -419,6 +422,11 @@
             const courseStatus = document.getElementById("course-status");
             const body = document.body;
             const versionInfo = document.getElementById("version-info");
+            const startBellAudio = document.getElementById("start-bell-audio");
+            const endBellAudio = document.getElementById("end-bell-audio");
+
+            // --- Bell Schedule ---
+            let scheduledBells = {}; // e.g., { "08:00": "start", "08:45": "end" }
 
             // --- Clock Functionality ---
             const CLOCK_INTERVAL = 233; // Update interval in milliseconds (as per original code)
@@ -440,16 +448,31 @@
             setInterval(showTime, CLOCK_INTERVAL);
 
             // --- Course Status Functionality ---
-            async function fetchCourseStatus() {
+            async function fetchStatusAndScheduleBells() {
                 try {
-                    const response = await fetch('./api/current-status');
-                    if (!response.ok) {
+                    // Fetch both status and public config
+                    const [statusResponse, configResponse] = await Promise.all([
+                        fetch('./api/current-status'),
+                        fetch('./api/public-config') // Use the new public endpoint
+                    ]);
+
+                    if (!statusResponse.ok || !configResponse.ok) {
+                        // If either fails, check for auth error and redirect
+                        if (statusResponse.status === 401 || configResponse.status === 401) {
+                            window.location.href = './login';
+                            return;
+                        }
                         throw new Error('网络请求失败');
                     }
-                    const data = await response.json();
-                    updateCourseStatus(data);
+
+                    const statusData = await statusResponse.json();
+                    const configData = await configResponse.json();
+
+                    updateCourseStatus(statusData);
+                    scheduleBellSounds(configData);
+
                 } catch (error) {
-                    console.error('获取课程状态失败:', error);
+                    console.error('获取状态或配置失败:', error);
                     statusContent.innerHTML = '<div class="status-free">无法获取课程信息</div>';
                     nextContent.innerHTML = '<div class="status-free">无法获取课程信息</div>';
                 }
@@ -692,9 +715,58 @@
             }
 
             // 初始加载课程状态
-            fetchCourseStatus();
+            fetchStatusAndScheduleBells();
             // 每30秒更新一次课程状态
-            setInterval(fetchCourseStatus, 30000);
+            setInterval(fetchStatusAndScheduleBells, 30000);
+
+            // --- Bell Sound Scheduling ---
+            function scheduleBellSounds(config) {
+                if (!config.timeSlots || !config.classStartBell || !config.classEndBell) {
+                    return; // Not configured
+                }
+
+                const now = new Date();
+                const todayStr = now.toISOString().split('T'); // "YYYY-MM-DD"
+
+                // Set audio sources
+                startBellAudio.src = `./public/audio/${config.classStartBell}`;
+                endBellAudio.src = `./public/audio/${config.classEndBell}`;
+
+                config.timeSlots.forEach(slot => {
+                    const startTimeStr = `${todayStr}T${slot.startTime}:00`;
+                    const endTimeStr = `${todayStr}T${slot.endTime}:00`;
+                    
+                    const startTime = new Date(startTimeStr);
+                    const endTime = new Date(endTimeStr);
+
+                    // Schedule start bell
+                    if (startTime > now && !scheduledBells[slot.startTime]) {
+                        const delay = startTime.getTime() - now.getTime();
+                        scheduledBells[slot.startTime] = setTimeout(() => {
+                            console.log(`Playing start bell at ${slot.startTime}`);
+                            startBellAudio.play().catch(e => console.error("音频播放失败:", e));
+                        }, delay);
+                    }
+
+                    // Schedule end bell
+                    if (endTime > now && !scheduledBells[slot.endTime]) {
+                        const delay = endTime.getTime() - now.getTime();
+                        scheduledBells[slot.endTime] = setTimeout(() => {
+                            console.log(`Playing end bell at ${slot.endTime}`);
+                            endBellAudio.play().catch(e => console.error("音频播放失败:", e));
+                        }, delay);
+                    }
+                });
+
+                // Reset schedule for the next day
+                const tomorrow = new Date(todayStr);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                const timeUntilTomorrow = tomorrow.getTime() - now.getTime();
+                setTimeout(() => {
+                    scheduledBells = {};
+                    console.log("Bell schedule reset for the new day.");
+                }, timeUntilTomorrow);
+            }
 
             // --- Theme Functionality ---
             // Get the currently stored theme ('dark' or 'light') from localStorage

@@ -178,7 +178,7 @@
         }
     </style>
 </head>
-<body>
+<body class="light-mode">
     <div class="container">
         <div class="header">
             <div class="header-title">
@@ -248,6 +248,25 @@
                         <input type="text" id="config-semester">
                     </div>
                     <button type="submit" class="btn btn-success">保存配置</button>
+                </form>
+            </div>
+
+            <div class="card" style="margin-top: 30px;">
+                <div class="card-header">
+                    <h2>铃声配置</h2>
+                </div>
+                <form id="bell-config-form" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="class-start-bell">上课铃声 (MP3, WAV, OGG)</label>
+                        <input type="file" id="class-start-bell" name="classStartBell" accept=".mp3,.wav,.ogg">
+                        <p id="current-start-bell" class="current-file"></p>
+                    </div>
+                    <div class="form-group">
+                        <label for="class-end-bell">下课铃声 (MP3, WAV, OGG)</label>
+                        <input type="file" id="class-end-bell" name="classEndBell" accept=".mp3,.wav,.ogg">
+                        <p id="current-end-bell" class="current-file"></p>
+                    </div>
+                    <button type="submit" class="btn btn-success">上传并保存铃声</button>
                 </form>
             </div>
         </div>
@@ -350,6 +369,21 @@
         function updateConfigForm() {
             document.getElementById('config-school-name').value = config.schoolName || '';
             document.getElementById('config-semester').value = config.currentSemester || '';
+            
+            // 更新铃声配置显示
+            const currentStartBell = document.getElementById('current-start-bell');
+            if (config.classStartBell) {
+                currentStartBell.innerHTML = `当前文件: <a href="./public/audio/${config.classStartBell}" target="_blank">${config.classStartBell}</a>`;
+            } else {
+                currentStartBell.textContent = '未设置';
+            }
+
+            const currentEndBell = document.getElementById('current-end-bell');
+            if (config.classEndBell) {
+                currentEndBell.innerHTML = `当前文件: <a href="./public/audio/${config.classEndBell}" target="_blank">${config.classEndBell}</a>`;
+            } else {
+                currentEndBell.textContent = '未设置';
+            }
         }
 
         // 加载课表网格
@@ -663,6 +697,46 @@
             }
         });
 
+        // 保存铃声配置
+        document.getElementById('bell-config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const startBellFile = document.getElementById('class-start-bell').files;
+            const endBellFile = document.getElementById('class-end-bell').files;
+
+            if (startBellFile.length > 0) {
+                formData.append('classStartBell', startBellFile[0]);
+            }
+            if (endBellFile.length > 0) {
+                formData.append('classEndBell', endBellFile[0]);
+            }
+
+            if (startBellFile.length === 0 && endBellFile.length === 0) {
+                showAlert('请至少选择一个文件上传', 'info');
+                return;
+            }
+
+            try {
+                const response = await fetch('./api/upload-bells', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    showAlert('铃声上传成功');
+                    const updatedConfig = await response.json();
+                    config.classStartBell = updatedConfig.classStartBell || config.classStartBell;
+                    config.classEndBell = updatedConfig.classEndBell || config.classEndBell;
+                    updateConfigForm(); // 重新渲染表单以显示新文件名
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || '上传失败');
+                }
+            } catch (error) {
+                showAlert(`铃声上传失败: ${error.message}`, 'error');
+            }
+        });
+
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', loadData);
 
@@ -741,5 +815,11 @@
             </form>
         </div>
     </div>
+    <script>
+        console.log('Computed --background-color:', getComputedStyle(document.body).getPropertyValue('--background-color'));
+        console.log('Computed --light-gray-color:', getComputedStyle(document.body).getPropertyValue('--light-gray-color'));
+        console.log('Computed --text-color:', getComputedStyle(document.body).getPropertyValue('--text-color'));
+        console.log('Computed --border-color:', getComputedStyle(document.body).getPropertyValue('--border-color'));
+    </script>
 </body>
 </html>

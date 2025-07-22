@@ -143,3 +143,10 @@ vite.config.ts.timestamp-*
 data/config.json
 data/courses.json
 data/schedule.csv
+
+# Uploaded media files
+public/audio/
+
+
+# macOS
+.DS_Store
