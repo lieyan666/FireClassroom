@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireClassroom</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Use :root for global CSS variables for better management */
+        :root {
+            --background-color: #fff; /* Default light background */
+            --text-color: #000;       /* Default light text */
+            --button-bg-color: #ffffff;
+            --button-text-color: #000000;
+            --button-border-color: #000000;
+            --button-hover-bg-color: #222222;
+            --button-hover-text-color: #ffffff;
+            /* Define the clock font family using a CSS variable */
+            --clock-font-family: 'Share Tech Mono', monospace;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            /* Use a standard system font for UI elements */
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            /* Set a sensible default font size */
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* Use min-height and remove default margin for reliable full viewport height */
+            min-height: 100vh;
+            margin: 0;
+            /* Added color transition for smoother theme changes */
+            transition: background-color 0.5s ease, color 0.5s ease;
+            /* Include padding and border in element's total width and height */
+            box-sizing: border-box;
+             /* Prevent text selection on the clock/background */
+            user-select: none;
+            overflow: hidden; /* Hide potential scrollbars caused by large font */
+        }
+
+        /* Dark mode specific variables and styles */
+        body.dark-mode {
+            --background-color: #000;
+            --text-color: #fff;
+            --button-bg-color: #333333; /* Dark mode button background */
+            --button-text-color: #ffffff;
+            --button-border-color: #555555;
+            --button-hover-bg-color: #555555;
+            --button-hover-text-color: #ffffff;
+        }
+
+        #classroom-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #time {
+             /* Apply the monospace clock font */
+             font-family: var(--clock-font-family);
+             font-size: 14rem;
+             /* Monospace fonts usually don't need bold or letter-spacing adjustments */
+             /* font-weight: normal; /* Ensure it's not bold */
+             /* letter-spacing: normal; /* Reset letter spacing */
+             text-align: center; /* Ensure time is centered */
+             /* Add some padding to prevent clipping if font size is very large */
+             padding: 10px;
+             margin-bottom: 15px;
+        }
+
+        #course-status {
+            display: flex;
+            gap: 30px;
+            width: 100%;
+            max-width: 900px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .status-card {
+            background: var(--button-bg-color);
+            border: 2px solid var(--button-border-color);
+            border-radius: 16px;
+            padding: 25px;
+            min-width: 320px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #current-status {
+            flex: 1.618;
+        }
+        
+        #next-course {
+            flex: 1;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-card:hover::before {
+            left: 100%;
+        }
+
+        .status-card h3 {
+            margin: 0 0 20px 0;
+            color: var(--text-color);
+            font-size: 1.4rem;
+            font-weight: 600;
+            text-align: center;
+            border-bottom: 2px solid var(--button-border-color);
+            padding-bottom: 12px;
+            position: relative;
+        }
+
+        .status-card h3::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, #007bff, #28a745);
+            border-radius: 1px;
+        }
+
+        .status-card .course-info {
+            text-align: center;
+            position: relative;
+        }
+
+        .status-card .course-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 12px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: 24px;
+            margin-top: 15px;
+            align-items: start;
+        }
+
+        .teacher-info {
+            background: var(--button-bg-color);
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .info-item {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: var(--text-color);
+            opacity: 0.7;
+            min-width: 40px;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: var(--text-color);
+            font-size: 0.9em;
+        }
+
+        .status-icon {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 15px;
+            display: block;
+            border-radius: 50%;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        .status-icon.free {
+            background: linear-gradient(135deg, #28a745, #20c997);
+        }
+
+        .status-icon.busy {
+            background: linear-gradient(135deg, #dc3545, #e74c3c);
+        }
+
+        .status-icon.upcoming {
+            background: linear-gradient(135deg, #ffc107, #ffb300);
+        }
+
+        .status-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .status-icon.free::after {
+            border-radius: 50%;
+        }
+
+        .status-icon.busy::after {
+            width: 12px;
+            height: 12px;
+        }
+
+        .status-icon.upcoming::after {
+            width: 0;
+            height: 0;
+            background: transparent;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 10px solid white;
+            border-radius: 0;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-free {
+            color: #28a745;
+            font-weight: 700;
+            font-size: 1.2rem;
+            animation: slideIn 0.5s ease;
+        }
+
+        .status-header {
+            display: flex;
+            align-items: baseline;
+            gap: 15px;
+        }
+        .course-name {
+            font-size: 2em;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-left: 15px;
+        }
+
+        .status-upcoming {
+            color: #ffc107;
+            font-weight: 700;
+            font-size: 1.2rem;
+            animation: slideIn 0.5s ease;
+        }
+
+        /* 环形进度条样式 */
+        .progress-container {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .progress-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .progress-circle::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from -90deg,
+                var(--progress-color, #007bff) 0deg,
+                var(--progress-color, #007bff) calc(var(--progress-deg, 0deg)),
+                transparent calc(var(--progress-deg, 0deg)),
+                transparent 360deg
+            );
+            transition: all 0.3s ease;
+        }
+
+        .progress-circle::after {
+            content: '';
+            width: 60px;
+            height: 60px;
+            background: var(--background-color);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 1;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-color);
+            z-index: 2;
+            text-align: center;
+            line-height: 1;
+            position: relative;
+        }
+
+        .progress-label {
+            font-size: 0.7rem;
+            color: var(--text-color);
+            opacity: 0.7;
+            margin-top: 4px;
+            text-align: center;
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+
+        /* 倒计时样式 */
+        .countdown {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #007bff;
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: rgba(0, 123, 255, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .countdown.urgent {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.1);
+            border-left-color: #dc3545;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.7; }
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: statusPulse 2s infinite;
+        }
+
+        .status-indicator.free {
+            background: #28a745;
+        }
+
+        .status-indicator.busy {
+            background: #dc3545;
+        }
+
+        .status-indicator.upcoming {
+            background: #ffc107;
+        }
+
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        .def-button {
+            position: fixed;
+            bottom: 20px;
+            font-size: 16px;
+            /* Slightly adjusted padding for better appearance */
+            padding: 10px 15px;
+            margin: 10px;
+            background-color: var(--button-bg-color);
+            color: var(--button-text-color);
+            text-align: center;
+            border: 1px solid var(--button-border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            /* Smoother transitions on hover */
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            /* Subtle shadow for depth */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1; /* Ensure buttons are above other content */
+             /* Prevent text selection on buttons */
+            user-select: none;
+            /* Use system font for buttons */
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        /* 简单模式样式 */
+        .simple-mode #course-status {
+            flex-direction: column;
+            gap: 5px;
+            padding: 10px;
+            margin: 0 auto;
+            max-width: 800px;
+            background-color: transparent;
+            color: var(--text-color);
+            border: none;
+            border-radius: 16px;
+        }
+
+        .simple-mode .status-card {
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0;
+            margin-bottom: 5px;
+            border: none !important;
+            border-radius: 0;
+        }
+
+        /* 简单模式下隐藏管理按钮 */
+        .simple-mode #admin-button {
+            display: none !important;
+        }
+
+        .simple-mode .status-card h3 {
+            display: none;
+        }
+
+        .simple-mode .course-info {
+            text-align: center;
+        }
+
+        .simple-mode .status-header {
+            display: none;
+        }
+
+        .simple-mode .info-grid {
+            display: none;
+        }
+
+        .simple-mode .course-details {
+            display: none;
+        }
+
+        .simple-mode .countdown {
+            display: none;
+        }
+
+        .simple-mode .course-name {
+            font-size: 2rem;
+            font-weight: 600;
+            margin: 4px 0;
+            color: var(--text-color);
+        }
+
+        .simple-mode .status-indicator {
+            display: none;
+        }
+
+        .simple-mode .status-free,
+        .simple-mode .status-upcoming {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--text-color);
+        }
+
+        /* 简单模式进度条 */
+        .simple-progress-bar {
+            width: 99%;
+            height: 16px;
+            background-color: var(--button-bg-color) !important;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 8px 0px;
+            position: relative;
+            border: 1px solid var(--button-border-color);
+        }
+
+        .simple-progress-fill {
+            height: 100%;
+            background: var(--text-color) !important;
+            transition: none !important;
+            border-radius: 10px;
+        }
+
+        .simple-progress-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 5px;
+            color: var(--text-color);
+        }
+
+        /* 移除简单模式下的所有特效 */
+        .simple-mode * {
+            transform: none !important;
+            transition: none !important;
+            animation: none !important;
+        }
+
+        .simple-mode .status-card:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .def-button:hover {
+            background-color: var(--button-hover-bg-color);
+            color: var(--button-hover-text-color);
+            /* Enhanced shadow on hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Responsive Adjustments --- */
+
+        /* Medium screens (tablets) */
+        @media (max-width: 768px) {
+            body {
+                font-size: 8rem; /* Decrease clock font size */
+            }
+            
+            #course-status {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .status-card {
+                min-width: 280px;
+                padding: 20px;
+            }
+            
+            .status-card h3 {
+                font-size: 1.1rem;
+            }
+            
+            .status-icon {
+                font-size: 2rem;
+            }
+            
+            .def-button {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+             /* Adjust button positions */
+            #fullscreen-button { right: 15px; }
+            #close-button { right: 105px; } /* Adjust position based on fullscreen button */
+            #theme-toggle-button { left: 15px; }
+        }
+
+         /* Small screens (phones) */
+         @media (max-width: 480px) {
+            body {
+                font-size: 5rem; /* Further decrease clock font size */
+                padding: 10px;
+            }
+            
+            #classroom-container {
+                padding: 10px;
+            }
+            
+            #course-status {
+                gap: 15px;
+            }
+            
+            .status-card {
+                min-width: 250px;
+                padding: 15px;
+                border-radius: 12px;
+            }
+            
+            .status-card h3 {
+                font-size: 1rem;
+                margin-bottom: 15px;
+            }
+            
+            .status-icon {
+                font-size: 1.8rem;
+                margin-bottom: 8px;
+            }
+            
+            .course-name {
+                font-size: 1rem !important;
+            }
+            
+            .course-details {
+                font-size: 0.85rem !important;
+            }
+            
+            .countdown {
+                font-size: 0.9rem;
+                padding: 6px 10px;
+            }
+            
+            .progress-container {
+                height: 6px;
+                margin: 10px 0;
+            }
+            
+            .progress-text {
+                font-size: 0.75rem;
+            }
+            
+             .def-button {
+                font-size: 12px;
+                padding: 6px 10px;
+                bottom: 10px; /* Move buttons up slightly */
+                margin: 5px;
+            }
+             /* Adjust button positions for small screens */
+            #fullscreen-button { right: 10px; }
+            #close-button { right: 80px; } /* Adjust position */
+            #theme-toggle-button { left: 10px; }
+            #admin-button { left: 80px; }
+        }
+        
+        /* Extra small screens */
+        @media (max-width: 360px) {
+            body {
+                font-size: 4rem;
+            }
+            
+            .status-card {
+                min-width: 220px;
+                padding: 12px;
+            }
+            
+            .status-icon {
+                font-size: 1.5rem;
+            }
+            
+            .def-button {
+                font-size: 11px;
+                padding: 5px 8px;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="classroom-container">
+        <div id="time">--:--:--</div>
+        <div id="course-status">
+            <div id="current-status" class="status-card">
+                <h3>当前状态</h3>
+                <div id="status-content">加载中...</div>
+            </div>
+            <div id="next-course" class="status-card">
+                <h3>下节课程</h3>
+                <div id="next-content">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <button id="fullscreen-button" class="def-button" style="right: 20px;">全屏</button>
+    <button id="close-button" class="def-button" style="display: none; right: 123px;">关闭网页</button>
+    <button id="theme-toggle-button" class="def-button" style="left: 20px;">切换主题</button>
+    <button id="view-mode-button" class="def-button" style="left: 150px;">简单模式</button>
+            <button id="admin-button" class="def-button" style="left: 280px;">管理</button>
+
+    <script>
+        // Encapsulate script logic to run after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- DOM Element References ---
+            // Cache references to frequently used DOM elements
+            const timeDisplay = document.getElementById("time");
+            const themeToggleButton = document.getElementById("theme-toggle-button");
+            const fullscreenButton = document.getElementById("fullscreen-button");
+            const closeButton = document.getElementById("close-button");
+            const adminButton = document.getElementById("admin-button");
+            const viewModeButton = document.getElementById("view-mode-button");
+            const statusContent = document.getElementById("status-content");
+            const nextContent = document.getElementById("next-content");
+            const courseStatus = document.getElementById("course-status");
+            const body = document.body;
+
+            // --- Clock Functionality ---
+            const CLOCK_INTERVAL = 233; // Update interval in milliseconds (as per original code)
+
+            // Function to update the time display
+            function showTime() {
+                const now = new Date();
+                // Pad hours, minutes, and seconds with leading zeros if needed
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const seconds = now.getSeconds().toString().padStart(2, '0');
+                // Update the text content of the time display element
+                timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+
+            // Display the time immediately on load
+            showTime();
+            // Set an interval to update the time regularly
+            setInterval(showTime, CLOCK_INTERVAL);
+
+            // --- Course Status Functionality ---
+            async function fetchCourseStatus() {
+                try {
+                    const response = await fetch('/api/current-status');
+                    if (!response.ok) {
+                        throw new Error('网络请求失败');
+                    }
+                    const data = await response.json();
+                    updateCourseStatus(data);
+                } catch (error) {
+                    console.error('获取课程状态失败:', error);
+                    statusContent.innerHTML = '<div class="status-free">无法获取课程信息</div>';
+                    nextContent.innerHTML = '<div class="status-free">无法获取课程信息</div>';
+                }
+            }
+
+            function updateCourseStatus(data) {
+                if (isSimpleMode) {
+                    // 简单模式显示
+                    if (data.status === 'inClass' && data.currentCourse) {
+                        const course = data.currentCourse;
+                        const progress = calculateCourseProgress(course);
+                        
+                        statusContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-free">正在上课</div>
+                                <div class="course-name">${course.name}</div>
+                                <div class="simple-progress-bar">
+                                    <div class="simple-progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                                <div class="simple-progress-time">
+                                    <span>${course.startTime}</span>
+                                    <span>${course.endTime}</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        statusContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-free">当前空闲</div>
+                            </div>
+                        `;
+                    }
+                    
+                    // 简单模式下节课信息
+                    if (data.nextCourse) {
+                        const next = data.nextCourse;
+                        nextContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-upcoming">下节课程</div>
+                                <div style="display: inline-flex; justify-content: center; align-items: baseline; gap: 5px;">
+                                    <div class="course-name" style="margin: 0; font-size: 2rem;">${next.name}</div>
+                                    <div style="font-size: 1.5rem; font-weight: 500; color: var(--text-color); white-space: nowrap;">${next.startTime}-${next.endTime}</div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        nextContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-free">暂无课程安排</div>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // 详细模式显示（原有逻辑）
+                    if (data.status === 'inClass' && data.currentCourse) {
+                        const course = data.currentCourse;
+                        const progress = calculateCourseProgress(course);
+                        const timeLeft = calculateTimeLeft(course.endTime);
+                        
+                        statusContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-header">
+                                    <span class="status-indicator busy"></span>
+                                    <h2 class="status-title">正在上课</h2>
+                                    <div class="course-name">${course.name}</div>
+                                </div>
+                                <div class="info-grid">
+                                    <div class="progress-container">
+                                        <div class="progress-circle" style="--progress-deg: ${progress * 3.6}deg; --progress-color: #dc3545;">
+                                            <div class="progress-text">${progress}%</div>
+                                            <div class="progress-label">课程进度</div>
+                                        </div>
+                                    </div>
+                                    <div class="teacher-info">
+                                        <div class="info-item">
+                                            <span class="info-label">教师</span>
+                                            <span class="info-value">${course.teacher}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">教室</span>
+                                            <span class="info-value">${course.classroom}</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <span class="info-label">时间</span>
+                                            <span class="info-value">${course.startTime}-${course.endTime}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="countdown ${timeLeft.urgent ? 'urgent' : ''}">
+                                    剩余时间: ${timeLeft.text}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        const nextClass = getNextClassInfo(data);
+                        statusContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-free">
+                                    <span class="status-indicator free"></span>当前空闲
+                                </div>
+                                ${nextClass ? `
+                                    <div class="countdown">
+                                        距离下节课: ${nextClass.timeUntil}
+                                    </div>
+                                ` : `
+                                    <div class="course-details">今天没有更多课程安排</div>
+                                `}
+                            </div>
+                        `;
+                    }
+
+                    // 更新下节课信息
+                    if (data.nextCourse) {
+                        const next = data.nextCourse;
+                        const timeUntil = calculateTimeUntilNext(next);
+                        
+                        nextContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-upcoming">
+                                    <span class="status-indicator upcoming"></span>即将开始
+                                </div>
+                                <div class="course-name">${next.name}</div>
+                                <div class="course-details">
+                                    教师: ${next.teacher}<br>
+                                    教室: ${next.classroom}<br>
+                                    时间: ${next.day} ${next.startTime} - ${next.endTime}
+                                </div>
+                                <div class="countdown ${timeUntil.urgent ? 'urgent' : ''}">
+                                    开始倒计时: ${timeUntil.text}
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        nextContent.innerHTML = `
+                            <div class="course-info">
+                                <div class="status-free">
+                                    <span class="status-indicator free"></span>暂无课程安排
+                                </div>
+                                <div class="course-details">今天没有更多课程了，好好休息吧！</div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            // 计算课程进度
+            function calculateCourseProgress(course) {
+                const now = new Date();
+                const [startHour, startMin] = course.startTime.split(':').map(Number);
+                const [endHour, endMin] = course.endTime.split(':').map(Number);
+                
+                const startTime = new Date();
+                startTime.setHours(startHour, startMin, 0, 0);
+                
+                const endTime = new Date();
+                endTime.setHours(endHour, endMin, 0, 0);
+                
+                const totalDuration = endTime - startTime;
+                const elapsed = now - startTime;
+                
+                const progress = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+                return Math.round(progress);
+            }
+
+            // 计算剩余时间
+            function calculateTimeLeft(endTime) {
+                const now = new Date();
+                const [endHour, endMin] = endTime.split(':').map(Number);
+                
+                const end = new Date();
+                end.setHours(endHour, endMin, 0, 0);
+                
+                const diff = end - now;
+                
+                if (diff <= 0) {
+                    return { text: '已结束', urgent: false };
+                }
+                
+                const minutes = Math.floor(diff / (1000 * 60));
+                const hours = Math.floor(minutes / 60);
+                const remainingMinutes = minutes % 60;
+                
+                let text = '';
+                if (hours > 0) {
+                    text = `${hours}小时${remainingMinutes}分钟`;
+                } else {
+                    text = `${remainingMinutes}分钟`;
+                }
+                
+                return {
+                    text: text,
+                    urgent: minutes <= 10
+                };
+            }
+
+            // 计算距离下节课的时间
+            function calculateTimeUntilNext(nextCourse) {
+                const now = new Date();
+                const [startHour, startMin] = nextCourse.startTime.split(':').map(Number);
+                
+                const start = new Date();
+                start.setHours(startHour, startMin, 0, 0);
+                
+                // 如果是明天的课程，需要加一天
+                if (start <= now) {
+                    start.setDate(start.getDate() + 1);
+                }
+                
+                const diff = start - now;
+                const minutes = Math.floor(diff / (1000 * 60));
+                const hours = Math.floor(minutes / 60);
+                const remainingMinutes = minutes % 60;
+                
+                let text = '';
+                if (hours > 0) {
+                    text = `${hours}小时${remainingMinutes}分钟`;
+                } else {
+                    text = `${remainingMinutes}分钟`;
+                }
+                
+                return {
+                    text: text,
+                    urgent: minutes <= 15
+                };
+            }
+
+            // 获取下节课信息
+            function getNextClassInfo(data) {
+                if (data.nextCourse) {
+                    const timeUntil = calculateTimeUntilNext(data.nextCourse);
+                    return {
+                        timeUntil: timeUntil.text
+                    };
+                }
+                return null;
+            }
+
+            // 初始加载课程状态
+            fetchCourseStatus();
+            // 每30秒更新一次课程状态
+            setInterval(fetchCourseStatus, 30000);
+
+            // --- Theme Functionality ---
+            // Get the currently stored theme ('dark' or 'light') from localStorage
+            let currentTheme = localStorage.getItem("theme");
+            // Variable to store the theme state before entering fullscreen
+            let themeBeforeFullscreen = currentTheme;
+
+            // Function to apply a specific theme ('dark' or 'light')
+            function applyTheme(theme) {
+                const isDarkMode = theme === 'dark';
+                // Add or remove the 'dark-mode' class based on the theme
+                body.classList.toggle("dark-mode", isDarkMode);
+                // Update the theme toggle button text accordingly
+                themeToggleButton.textContent = isDarkMode ? "浅色模式" : "深色模式";
+                // Store the selected theme in localStorage for persistence
+                localStorage.setItem("theme", theme);
+                // Update the global currentTheme variable
+                currentTheme = theme;
+            }
+
+            // Function to toggle between light and dark themes
+            function toggleTheme() {
+                // Determine the new theme based on the current state
+                const newTheme = body.classList.contains("dark-mode") ? 'light' : 'dark';
+                applyTheme(newTheme);
+            }
+
+            // --- Initialize Theme on Load ---
+            if (currentTheme) {
+                // If a theme is stored in localStorage, apply it
+                applyTheme(currentTheme);
+            } else {
+                // Otherwise, detect the user's system preference
+                const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+                applyTheme(prefersDark ? 'dark' : 'light');
+            }
+
+            // Add event listener to the theme toggle button
+            themeToggleButton.addEventListener("click", toggleTheme);
+
+            // --- Fullscreen Functionality ---
+            // Function to toggle fullscreen mode
+            function toggleFullscreen() {
+                // Check if the document is currently in fullscreen mode
+                if (!document.fullscreenElement) {
+                    // --- Enter Fullscreen ---
+                    document.documentElement.requestFullscreen()
+                        .then(() => {
+                            // Save the current theme before potentially changing it
+                            themeBeforeFullscreen = currentTheme;
+                            // Force dark mode when entering fullscreen (as per original logic)
+                            applyTheme('dark');
+                            // Show the close button
+                            closeButton.style.display = "inline-block";
+                            // Update the fullscreen button text
+                            fullscreenButton.textContent = "退出全屏";
+                        })
+                        .catch(err => {
+                            // Log error if fullscreen request fails
+                            console.error(`进入全屏模式时出错: ${err.message} (${err.name})`);
+                            // Optional: Display a user-friendly message here
+                        });
+                } else {
+                    // --- Exit Fullscreen ---
+                    document.exitFullscreen()
+                        .then(() => {
+                            // Restore the theme that was active before entering fullscreen
+                            applyTheme(themeBeforeFullscreen);
+                            // Hide the close button
+                            closeButton.style.display = "none";
+                            // Update the fullscreen button text
+                            fullscreenButton.textContent = "全屏";
+                        })
+                        .catch(err => {
+                            // Log error if exiting fullscreen fails
+                            console.error(`退出全屏模式时出错: ${err.message} (${err.name})`);
+                        });
+                }
+            }
+
+            // Add event listener to the fullscreen button
+            fullscreenButton.addEventListener("click", toggleFullscreen);
+
+            // --- Handle Fullscreen Changes (e.g., user pressing ESC) ---
+            document.addEventListener('fullscreenchange', () => {
+                // Check if we have exited fullscreen mode
+                if (!document.fullscreenElement) {
+                    // Ensure the theme is restored if it was changed for fullscreen
+                    // Check if the current theme is different from the pre-fullscreen theme
+                    if (currentTheme !== themeBeforeFullscreen) {
+                         applyTheme(themeBeforeFullscreen);
+                    }
+                    // Ensure buttons are in the correct state after exiting fullscreen
+                    closeButton.style.display = "none";
+                    fullscreenButton.textContent = "全屏";
+                }
+            });
+
+            // --- Close Button Functionality ---
+            // Add event listener to the close button
+            closeButton.addEventListener("click", () => {
+                // Note: window.close() has limitations and might not work in all browsers
+                // It generally only works for windows/tabs opened via window.open()
+                window.close();
+                // Consider adding a fallback message if window.close() fails
+                // e.g., closeButton.textContent = '请手动关闭标签页';
+            });
+
+            // --- Admin Button Functionality ---
+            // Add event listener to the admin button
+            adminButton.addEventListener("click", () => {
+                window.open('/admin.html', '_blank');
+            });
+
+            // --- View Mode Functionality ---
+            let isSimpleMode = localStorage.getItem('viewMode') === 'simple';
+            
+            function toggleViewMode() {
+                isSimpleMode = !isSimpleMode;
+                body.classList.toggle('simple-mode', isSimpleMode);
+                viewModeButton.textContent = isSimpleMode ? '详细模式' : '简单模式';
+                localStorage.setItem('viewMode', isSimpleMode ? 'simple' : 'detailed');
+                
+                // 重新获取并更新课程状态以应用新的显示模式
+                fetchCourseStatus();
+            }
+            
+            // 初始化视图模式
+            if (isSimpleMode) {
+                body.classList.add('simple-mode');
+                viewModeButton.textContent = '详细模式';
+            }
+            
+            // Add event listener to the view mode button
+            viewModeButton.addEventListener('click', toggleViewMode);
+
+        }); // End of DOMContentLoaded listener
+    </script>
+
+</body>
+</html>

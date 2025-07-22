@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页时钟</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        /* Use :root for global CSS variables for better management */
+        :root {
+            --background-color: #fff; /* Default light background */
+            --text-color: #000;       /* Default light text */
+            --button-bg-color: #ffffff;
+            --button-text-color: #000000;
+            --button-border-color: #000000;
+            --button-hover-bg-color: #222222;
+            --button-hover-text-color: #ffffff;
+            /* Define the clock font family using a CSS variable */
+            --clock-font-family: 'Share Tech Mono', monospace;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            /* Use a standard system font for UI elements */
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            /* Set base font size for the clock - adjusted for the new font */
+            font-size: 14rem; /* May need slight adjustment */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* Use min-height and remove default margin for reliable full viewport height */
+            min-height: 100vh;
+            margin: 0;
+            /* Added color transition for smoother theme changes */
+            transition: background-color 0.5s ease, color 0.5s ease;
+            /* Include padding and border in element's total width and height */
+            box-sizing: border-box;
+             /* Prevent text selection on the clock/background */
+            user-select: none;
+            overflow: hidden; /* Hide potential scrollbars caused by large font */
+        }
+
+        /* Dark mode specific variables and styles */
+        body.dark-mode {
+            --background-color: #000;
+            --text-color: #fff;
+            --button-bg-color: #333333; /* Dark mode button background */
+            --button-text-color: #ffffff;
+            --button-border-color: #555555;
+            --button-hover-bg-color: #555555;
+            --button-hover-text-color: #ffffff;
+        }
+
+        #time {
+             /* Apply the monospace clock font */
+             font-family: var(--clock-font-family);
+             /* Monospace fonts usually don't need bold or letter-spacing adjustments */
+             /* font-weight: normal; /* Ensure it's not bold */
+             /* letter-spacing: normal; /* Reset letter spacing */
+             text-align: center; /* Ensure time is centered */
+             /* Add some padding to prevent clipping if font size is very large */
+             padding: 10px;
+        }
+
+        .def-button {
+            position: fixed;
+            bottom: 20px;
+            font-size: 16px;
+            /* Slightly adjusted padding for better appearance */
+            padding: 10px 15px;
+            margin: 10px;
+            background-color: var(--button-bg-color);
+            color: var(--button-text-color);
+            text-align: center;
+            border: 1px solid var(--button-border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            /* Smoother transitions on hover */
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            /* Subtle shadow for depth */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            z-index: 1; /* Ensure buttons are above other content */
+             /* Prevent text selection on buttons */
+            user-select: none;
+            /* Use system font for buttons */
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        .def-button:hover {
+            background-color: var(--button-hover-bg-color);
+            color: var(--button-hover-text-color);
+            /* Enhanced shadow on hover */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Responsive Adjustments --- */
+
+        /* Medium screens (tablets) */
+        @media (max-width: 768px) {
+            body {
+                font-size: 10rem; /* Decrease clock font size */
+            }
+            .def-button {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+             /* Adjust button positions */
+            #fullscreen-button { right: 15px; }
+            #close-button { right: 105px; } /* Adjust position based on fullscreen button */
+            #theme-toggle-button { left: 15px; }
+        }
+
+         /* Small screens (phones) */
+         @media (max-width: 480px) {
+            body {
+                font-size: 6.5rem; /* Further decrease clock font size */
+            }
+             .def-button {
+                font-size: 12px;
+                padding: 6px 10px;
+                bottom: 10px; /* Move buttons up slightly */
+                margin: 5px;
+            }
+             /* Adjust button positions for small screens */
+            #fullscreen-button { right: 10px; }
+            #close-button { right: 80px; } /* Adjust position */
+            #theme-toggle-button { left: 10px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="time">--:--:--</div>
+
+    <button id="fullscreen-button" class="def-button" style="right: 20px;">全屏</button>
+    <button id="close-button" class="def-button" style="display: none; right: 123px;">关闭网页</button>
+    <button id="theme-toggle-button" class="def-button" style="left: 20px;">切换主题</button>
+
+    <script>
+        // Encapsulate script logic to run after the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- DOM Element References ---
+            // Cache references to frequently used DOM elements
+            const timeDisplay = document.getElementById("time");
+            const themeToggleButton = document.getElementById("theme-toggle-button");
+            const fullscreenButton = document.getElementById("fullscreen-button");
+            const closeButton = document.getElementById("close-button");
+            const body = document.body;
+
+            // --- Clock Functionality ---
+            const CLOCK_INTERVAL = 233; // Update interval in milliseconds (as per original code)
+
+            // Function to update the time display
+            function showTime() {
+                const now = new Date();
+                // Pad hours, minutes, and seconds with leading zeros if needed
+                const hours = now.getHours().toString().padStart(2, '0');
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const seconds = now.getSeconds().toString().padStart(2, '0');
+                // Update the text content of the time display element
+                timeDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+
+            // Display the time immediately on load
+            showTime();
+            // Set an interval to update the time regularly
+            setInterval(showTime, CLOCK_INTERVAL);
+
+            // --- Theme Functionality ---
+            // Get the currently stored theme ('dark' or 'light') from localStorage
+            let currentTheme = localStorage.getItem("theme");
+            // Variable to store the theme state before entering fullscreen
+            let themeBeforeFullscreen = currentTheme;
+
+            // Function to apply a specific theme ('dark' or 'light')
+            function applyTheme(theme) {
+                const isDarkMode = theme === 'dark';
+                // Add or remove the 'dark-mode' class based on the theme
+                body.classList.toggle("dark-mode", isDarkMode);
+                // Update the theme toggle button text accordingly
+                themeToggleButton.textContent = isDarkMode ? "浅色模式" : "深色模式";
+                // Store the selected theme in localStorage for persistence
+                localStorage.setItem("theme", theme);
+                // Update the global currentTheme variable
+                currentTheme = theme;
+            }
+
+            // Function to toggle between light and dark themes
+            function toggleTheme() {
+                // Determine the new theme based on the current state
+                const newTheme = body.classList.contains("dark-mode") ? 'light' : 'dark';
+                applyTheme(newTheme);
+            }
+
+            // --- Initialize Theme on Load ---
+            if (currentTheme) {
+                // If a theme is stored in localStorage, apply it
+                applyTheme(currentTheme);
+            } else {
+                // Otherwise, detect the user's system preference
+                const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+                applyTheme(prefersDark ? 'dark' : 'light');
+            }
+
+            // Add event listener to the theme toggle button
+            themeToggleButton.addEventListener("click", toggleTheme);
+
+            // --- Fullscreen Functionality ---
+            // Function to toggle fullscreen mode
+            function toggleFullscreen() {
+                // Check if the document is currently in fullscreen mode
+                if (!document.fullscreenElement) {
+                    // --- Enter Fullscreen ---
+                    document.documentElement.requestFullscreen()
+                        .then(() => {
+                            // Save the current theme before potentially changing it
+                            themeBeforeFullscreen = currentTheme;
+                            // Force dark mode when entering fullscreen (as per original logic)
+                            applyTheme('dark');
+                            // Show the close button
+                            closeButton.style.display = "inline-block";
+                            // Update the fullscreen button text
+                            fullscreenButton.textContent = "退出全屏";
+                        })
+                        .catch(err => {
+                            // Log error if fullscreen request fails
+                            console.error(`进入全屏模式时出错: ${err.message} (${err.name})`);
+                            // Optional: Display a user-friendly message here
+                        });
+                } else {
+                    // --- Exit Fullscreen ---
+                    document.exitFullscreen()
+                        .then(() => {
+                            // Restore the theme that was active before entering fullscreen
+                            applyTheme(themeBeforeFullscreen);
+                            // Hide the close button
+                            closeButton.style.display = "none";
+                            // Update the fullscreen button text
+                            fullscreenButton.textContent = "全屏";
+                        })
+                        .catch(err => {
+                            // Log error if exiting fullscreen fails
+                            console.error(`退出全屏模式时出错: ${err.message} (${err.name})`);
+                        });
+                }
+            }
+
+            // Add event listener to the fullscreen button
+            fullscreenButton.addEventListener("click", toggleFullscreen);
+
+            // --- Handle Fullscreen Changes (e.g., user pressing ESC) ---
+            document.addEventListener('fullscreenchange', () => {
+                // Check if we have exited fullscreen mode
+                if (!document.fullscreenElement) {
+                    // Ensure the theme is restored if it was changed for fullscreen
+                    // Check if the current theme is different from the pre-fullscreen theme
+                    if (currentTheme !== themeBeforeFullscreen) {
+                         applyTheme(themeBeforeFullscreen);
+                    }
+                    // Ensure buttons are in the correct state after exiting fullscreen
+                    closeButton.style.display = "none";
+                    fullscreenButton.textContent = "全屏";
+                }
+            });
+
+            // --- Close Button Functionality ---
+            // Add event listener to the close button
+            closeButton.addEventListener("click", () => {
+                // Note: window.close() has limitations and might not work in all browsers
+                // It generally only works for windows/tabs opened via window.open()
+                window.close();
+                // Consider adding a fallback message if window.close() fails
+                // e.g., closeButton.textContent = '请手动关闭标签页';
+            });
+
+        }); // End of DOMContentLoaded listener
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireClassroom - 管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            border-right: 1px solid #dee2e6;
+        }
+
+        .nav-tab:last-child {
+            border-right: none;
+        }
+
+        .nav-tab.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: #e9ecef;
+        }
+
+        .tab-content {
+            display: none;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: auto repeat(7, 1fr);
+            gap: 1px;
+            background: #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .schedule-cell {
+            background: white;
+            padding: 10px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .schedule-header {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .schedule-course {
+            background: #e3f2fd;
+            color: #1976d2;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .schedule-course:hover {
+            background: #bbdefb;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #6c757d;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .back-btn:hover {
+            background: #545b62;
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            max-width: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-btn">返回教室</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1>FireClassroom管理后台</h1>
+            <p>管理课程信息和课表安排</p>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('courses')">课程管理</button>
+            <button class="nav-tab" onclick="showTab('schedule')">课表管理</button>
+            <button class="nav-tab" onclick="showTab('config')">系统配置</button>
+        </div>
+
+        <div id="alert" class="alert"></div>
+
+        <!-- 课程管理 -->
+        <div id="courses-tab" class="tab-content active">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>课程管理</h2>
+                <button class="btn btn-primary" onclick="openCourseEditModal()">添加新课程</button>
+            </div>
+            <table class="table" id="courses-table">
+                <thead>
+                    <tr>
+                        <th>课程代码</th>
+                        <th>课程名称</th>
+                        <th>授课教师</th>
+                        <th>教室</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <!-- 课表管理 -->
+        <div id="schedule-tab" class="tab-content">
+            <h2>课表管理</h2>
+            <p>点击下面的课表单元格以添加、更新或删除课程安排。</p>
+            <div id="schedule-grid" class="schedule-grid"></div>
+        </div>
+
+        <!-- 系统配置 -->
+        <div id="config-tab" class="tab-content">
+            <h2>系统配置</h2>
+            <form id="config-form">
+                <div class="form-group">
+                    <label>学校名称</label>
+                    <input type="text" id="config-school-name">
+                </div>
+                <div class="form-group">
+                    <label>当前学期</label>
+                    <input type="text" id="config-semester">
+                </div>
+                <button type="submit" class="btn btn-success">保存配置</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let courses = [];
+        let schedule = [];
+        let config = {};
+
+        // 标签页切换
+        function showTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'schedule') {
+                loadScheduleGrid();
+            }
+        }
+
+        // 显示提示信息
+        function showAlert(message, type = 'success') {
+            const alert = document.getElementById('alert');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+
+        // 加载数据
+        async function loadData() {
+            try {
+                // 加载配置，这个接口不需要登录
+                const configResponse = await fetch('/api/config');
+                if (configResponse.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                config = await configResponse.json();
+
+                // 加载课程
+                const coursesResponse = await fetch('/api/courses');
+                 if (coursesResponse.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const coursesData = await coursesResponse.json();
+                courses = coursesData.courses || [];
+                
+                // 加载课表
+                const scheduleResponse = await fetch('/api/schedule');
+                 if (scheduleResponse.status === 401) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                const scheduleData = await scheduleResponse.json();
+                schedule = scheduleData.schedule || [];
+                
+                updateUI();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showAlert('加载数据失败', 'error');
+            }
+        }
+
+        // 更新界面
+        function updateUI() {
+            updateCoursesTable();
+            updateConfigForm();
+        }
+
+        // 更新课程表格
+        function updateCoursesTable() {
+            const tbody = document.querySelector('#courses-table tbody');
+            tbody.innerHTML = '';
+            
+            courses.forEach(course => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${course.id}</td>
+                    <td>${course.name}</td>
+                    <td>${course.teacher}</td>
+                    <td>${course.classroom}</td>
+                    <td>
+                        <button class="btn btn-primary" style="margin-right: 5px;" onclick="openCourseEditModal('${course.id}')">编辑</button>
+                        <button class="btn btn-danger" onclick="deleteCourse('${course.id}')">删除</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+
+        // 更新配置表单
+        function updateConfigForm() {
+            document.getElementById('config-school-name').value = config.schoolName || '';
+            document.getElementById('config-semester').value = config.currentSemester || '';
+        }
+
+        // 加载课表网格
+        function loadScheduleGrid() {
+            const grid = document.getElementById('schedule-grid');
+            grid.innerHTML = '';
+            
+            // 创建表头
+            const headerCell = document.createElement('div');
+            headerCell.className = 'schedule-cell schedule-header';
+            headerCell.textContent = '时间/星期';
+            grid.appendChild(headerCell);
+            
+            config.weekdays?.forEach(day => {
+                const dayCell = document.createElement('div');
+                dayCell.className = 'schedule-cell schedule-header';
+                dayCell.textContent = day;
+                grid.appendChild(dayCell);
+            });
+            
+            // 创建时间段行
+            config.timeSlots?.forEach(slot => {
+                const timeCell = document.createElement('div');
+                timeCell.className = 'schedule-cell schedule-header';
+                timeCell.textContent = `${slot.name}\n${slot.startTime}-${slot.endTime}`;
+                grid.appendChild(timeCell);
+                
+                for (let day = 1; day <= 7; day++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'schedule-cell';
+                    
+                    const courseSchedule = schedule.find(s => 
+                        parseInt(s.day) === day && parseInt(s.timeSlot) === slot.id
+                    );
+                    
+                    if (courseSchedule) {
+                        const course = courses.find(c => c.id === courseSchedule.courseId);
+                        if (course) {
+                            cell.className += ' schedule-course';
+                            cell.innerHTML = `${course.name}<br><small>${course.teacher}</small>`;
+                        }
+                    }
+                    cell.onclick = () => openCourseModal(day, slot.id);
+                    grid.appendChild(cell);
+                }
+            });
+        }
+
+        // 打开课程编辑/添加模态框
+        let isEditingCourse = false;
+        function openCourseEditModal(courseId = null) {
+            const modal = document.getElementById('course-edit-modal');
+            const form = document.getElementById('course-form');
+            const title = document.getElementById('course-modal-title');
+            const idInput = document.getElementById('course-id');
+
+            form.reset();
+
+            if (courseId) {
+                // 编辑模式
+                isEditingCourse = true;
+                title.textContent = '编辑课程';
+                const course = courses.find(c => c.id === courseId);
+                if (course) {
+                    idInput.value = course.id;
+                    idInput.readOnly = true; // 禁止修改课程代码
+                    document.getElementById('course-name').value = course.name;
+                    document.getElementById('course-teacher').value = course.teacher;
+                    document.getElementById('course-classroom').value = course.classroom;
+                    document.getElementById('course-description').value = course.description;
+                }
+            } else {
+                // 添加模式
+                isEditingCourse = false;
+                title.textContent = '添加新课程';
+                idInput.readOnly = false;
+            }
+
+            modal.style.display = 'block';
+        }
+
+        function closeCourseEditModal() {
+            document.getElementById('course-edit-modal').style.display = 'none';
+        }
+
+        // 保存课程（添加或更新）
+        async function saveCourse(event) {
+            event.preventDefault();
+            
+            const courseData = {
+                id: document.getElementById('course-id').value,
+                name: document.getElementById('course-name').value,
+                teacher: document.getElementById('course-teacher').value,
+                classroom: document.getElementById('course-classroom').value,
+                description: document.getElementById('course-description').value
+            };
+
+            if (isEditingCourse) {
+                // 更新现有课程
+                const index = courses.findIndex(c => c.id === courseData.id);
+                if (index !== -1) {
+                    courses[index] = courseData;
+                }
+            } else {
+                // 添加新课程，检查ID是否重复
+                if (courses.some(c => c.id === courseData.id)) {
+                    showAlert('课程代码已存在，请使用其他代码', 'error');
+                    return;
+                }
+                courses.push(courseData);
+            }
+            
+            try {
+                const response = await fetch('/api/courses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ courses })
+                });
+                
+                if (response.ok) {
+                    showAlert(isEditingCourse ? '课程更新成功' : '课程添加成功');
+                    closeCourseEditModal();
+                    updateUI();
+                } else {
+                    throw new Error('保存失败');
+                }
+            } catch (error) {
+                showAlert('保存课程失败', 'error');
+            }
+        }
+
+        // 删除课程
+        async function deleteCourse(courseId) {
+            if (!confirm('确定要删除这门课程吗？')) return;
+            
+            courses = courses.filter(c => c.id !== courseId);
+            
+            try {
+                const response = await fetch('/api/courses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ courses })
+                });
+                
+                if (response.ok) {
+                    showAlert('课程删除成功');
+                    updateUI();
+                } else {
+                    throw new Error('删除失败');
+                }
+            } catch (error) {
+                showAlert('删除课程失败', 'error');
+            }
+        }
+
+        // 打开课程选择模态框
+       let currentEditing = { day: null, timeSlot: null };
+       function openCourseModal(day, timeSlot) {
+           currentEditing = { day, timeSlot };
+           
+           const modal = document.getElementById('course-modal');
+           const select = document.getElementById('modal-course-select');
+           select.innerHTML = '<option value="">-- 选择课程 --</option>';
+           
+           courses.forEach(course => {
+               const option = document.createElement('option');
+               option.value = course.id;
+               option.textContent = `${course.name} (${course.teacher})`;
+               select.appendChild(option);
+           });
+
+           const existingSchedule = schedule.find(s => parseInt(s.day) === day && parseInt(s.timeSlot) === timeSlot);
+           if (existingSchedule) {
+               select.value = existingSchedule.courseId;
+           } else {
+               select.value = "";
+           }
+           
+           modal.style.display = 'block';
+       }
+
+       function closeModal() {
+           document.getElementById('course-modal').style.display = 'none';
+       }
+
+       async function saveScheduleChange() {
+           const courseId = document.getElementById('modal-course-select').value;
+           const { day, timeSlot } = currentEditing;
+
+           // 移除旧的安排
+           schedule = schedule.filter(s =>
+               !(parseInt(s.day) === day && parseInt(s.timeSlot) === timeSlot)
+           );
+
+           // 如果选择了课程，则添加新的安排
+           if (courseId) {
+               schedule.push({
+                   day: day.toString(),
+                   timeSlot: timeSlot.toString(),
+                   courseId: courseId,
+                   week: "1-16" // 默认周次
+               });
+           }
+
+           try {
+               const response = await fetch('/api/schedule', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ schedule })
+               });
+
+               if (response.ok) {
+                   showAlert('课表更新成功');
+                   closeModal();
+                   loadScheduleGrid();
+               } else {
+                   throw new Error('更新失败');
+               }
+           } catch (error) {
+               showAlert('更新课表失败', 'error');
+           }
+       }
+
+       async function deleteCurrentSchedule() {
+           const { day, timeSlot } = currentEditing;
+
+           // 检查是否存在该日程
+           const existingScheduleIndex = schedule.findIndex(s =>
+               parseInt(s.day) === day && parseInt(s.timeSlot) === timeSlot
+           );
+
+           if (existingScheduleIndex === -1) {
+               showAlert('该时间段没有课程安排，无需删除', 'error');
+               return;
+           }
+
+           if (!confirm('确定要删除这个课程安排吗？')) return;
+
+           // 移除该日程
+           schedule.splice(existingScheduleIndex, 1);
+
+           try {
+               const response = await fetch('/api/schedule', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ schedule })
+               });
+
+               if (response.ok) {
+                   showAlert('课程安排删除成功');
+                   closeModal();
+                   loadScheduleGrid();
+               } else {
+                   throw new Error('删除失败');
+               }
+           } catch (error) {
+               showAlert('删除课表失败', 'error');
+           }
+       }
+
+        // 删除课表安排
+        async function deleteSchedule(day, timeSlot) {
+            if (!confirm('确定要删除这个课程安排吗？')) return;
+            
+            schedule = schedule.filter(s => 
+                !(parseInt(s.day) === day && parseInt(s.timeSlot) === timeSlot)
+            );
+            
+            try {
+                // 调用后端API保存课表
+                const response = await fetch('/api/schedule', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ schedule })
+                });
+                
+                if (response.ok) {
+                    showAlert('课程安排删除成功');
+                    loadScheduleGrid();
+                } else {
+                    throw new Error('删除失败');
+                }
+            } catch (error) {
+                showAlert('删除课表失败', 'error');
+                console.error('删除课表失败:', error);
+            }
+        }
+
+        // 保存配置
+        document.getElementById('config-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            config.schoolName = document.getElementById('config-school-name').value;
+            config.currentSemester = document.getElementById('config-semester').value;
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (response.ok) {
+                    showAlert('配置保存成功');
+                } else {
+                    throw new Error('保存失败');
+                }
+            } catch (error) {
+                showAlert('保存配置失败', 'error');
+            }
+        });
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+
+   <!-- 课程选择模态框 -->
+   <div id="course-modal" class="modal">
+       <div class="modal-content">
+           <span class="close-btn" onclick="closeModal()">&times;</span>
+           <h3>编辑课程安排</h3>
+           <div class="form-group">
+               <label>选择课程</label>
+               <select id="modal-course-select" class="form-group"></select>
+           </div>
+           <button class="btn btn-primary" onclick="saveScheduleChange()">保存</button>
+           <button class="btn btn-danger" onclick="deleteCurrentSchedule()">删除</button>
+           <button class="btn" onclick="closeModal()">取消</button>
+       </div>
+   </div>
+
+   <!-- 课程编辑/添加模态框 -->
+   <div id="course-edit-modal" class="modal">
+       <div class="modal-content">
+           <span class="close-btn" onclick="closeCourseEditModal()">&times;</span>
+           <h3 id="course-modal-title">添加新课程</h3>
+           <form id="course-form" onsubmit="saveCourse(event)">
+               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                   <div class="form-group">
+                       <label>课程代码</label>
+                       <input type="text" id="course-id" required>
+                   </div>
+                   <div class="form-group">
+                       <label>课程名称</label>
+                       <input type="text" id="course-name" required>
+                   </div>
+                   <div class="form-group">
+                       <label>授课教师</label>
+                       <input type="text" id="course-teacher" required>
+                   </div>
+                   <div class="form-group">
+                       <label>教室</label>
+                       <input type="text" id="course-classroom" required>
+                   </div>
+               </div>
+               <div class="form-group">
+                   <label>课程描述</label>
+                   <textarea id="course-description"></textarea>
+               </div>
+               <button type="submit" class="btn btn-primary">保存</button>
+               <button type="button" class="btn" onclick="closeCourseEditModal()">取消</button>
+           </form>
+       </div>
+   </div>
+</body>
+</html>

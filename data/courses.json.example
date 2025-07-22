@@ -1,0 +1,32 @@
+{
+  "courses": [
+    {
+      "id": "MATH001",
+      "name": "高等数学",
+      "teacher": "张教授1",
+      "classroom": "A101",
+      "description": "高等数学基础课程"
+    },
+    {
+      "id": "ENG001",
+      "name": "大学英语",
+      "teacher": "李老师",
+      "classroom": "B202",
+      "description": "大学英语听说读写"
+    },
+    {
+      "id": "CHS",
+      "name": "语文",
+      "teacher": "1",
+      "classroom": "1",
+      "description": ""
+    },
+    {
+      "id": "MATH",
+      "name": "数学",
+      "teacher": "1",
+      "classroom": "1",
+      "description": ""
+    }
+  ]
+}

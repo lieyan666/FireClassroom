@@ -1,0 +1,29 @@
+{
+  "name": "fire-classroom",
+  "version": "1.0.0",
+  "description": "在线教室系统，支持根据课表时间显示当前课程状态",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": [
+    "classroom",
+    "schedule",
+    "education",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parser": "^3.0.0",
+    "express": "^4.18.2",
+    "express-session": "^1.18.2",
+    "multer": "^1.4.5-lts.1",
+    "useragent": "^2.3.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
