@@ -70,5 +70,7 @@
     "username": "admin",
     "password": "your_secure_password"
   },
+  "port": 3000,
+  "sessionSecret": "a_very_secret_and_random_key_for_production_env",
   "routePrefix": "/fireclassroom"
 }

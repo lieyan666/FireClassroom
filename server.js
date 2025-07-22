@@ -15,12 +15,6 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 // app.use(express.static('public')); // 将在主路由中处理
-app.use(session({
-    secret: 'a_secret_key_for_session', // 在生产环境中应使用更安全的密钥
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } // 如果使用HTTPS，应设为true
-}));
 
 // 日志中间件
 app.use((req, res, next) => {
@@ -453,23 +447,39 @@ function getGitCommitHash() {
 // 初始化数据文件
 initializeDataFiles();
 
-// 启动服务器
-app.listen(PORT, () => {
-    console.log(`FireClassroom running at http://localhost:${PORT}`);
-    
-    // 初始加载配置
-    loadConfig();
+// --- 启动逻辑 ---
 
-    // 动态挂载主路由
+// 1. 首次加载配置
+loadConfig();
+
+// 2. 确定端口号
+const finalPort = process.env.PORT || appConfig.port || 3000;
+
+// 3. 初始化 session 中间件
+app.use(session({
+    secret: appConfig.sessionSecret || 'a_secret_key_for_session_fallback',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // 如果使用HTTPS，应设为true
+}));
+
+// 4. 动态挂载主路由
+if (appConfig.routePrefix) {
+    app.use(appConfig.routePrefix, mainRouter);
+    // 根路径返回 403 Forbidden
+    app.get('/', (req, res) => {
+        res.status(403).send('Forbidden');
+    });
+} else {
+    app.use('/', mainRouter);
+}
+
+// 5. 启动服务器
+app.listen(finalPort, () => {
+    console.log(`FireClassroom running at http://localhost:${finalPort}`);
     if (appConfig.routePrefix) {
-        app.use(appConfig.routePrefix, mainRouter);
-        // 根路径返回 403 Forbidden
-        app.get('/', (req, res) => {
-            res.status(403).send('Forbidden');
-        });
         console.log(`应用已挂载到: ${appConfig.routePrefix}`);
     } else {
-        app.use('/', mainRouter);
         console.log(`应用已挂载到根路径 /`);
     }
 
@@ -477,7 +487,7 @@ app.listen(PORT, () => {
     fs.watch(CONFIG_FILE, (eventType, filename) => {
         if (filename && eventType === 'change') {
             console.log(`检测到配置文件 '${filename}' 发生变化，正在热重载...`);
-            // 注意：热重载路由前缀需要重启服务器才能生效
+            // 注意：热重载路由前缀和端口需要重启服务器才能生效
             loadConfig();
         }
     });
