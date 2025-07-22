@@ -1,0 +1,274 @@
+/*
+ * @Author: Lieyan
+ * @Date: 2025-07-22 18:23:41
+ * @LastEditors: Lieyan
+ * @LastEditTime: 2025-07-22 22:33:50
+ * @FilePath: /FireClassroom/public/css/style.css
+ * @Description: 
+ * @Contact: QQ: 2102177341  Website: lieyan.space  Github: @lieyan666
+ * @Copyright: Copyright (c) 2025 by lieyanDevTeam, All Rights Reserved. 
+ */
+:root {
+    --primary-color: #018eee;
+    --primary-color-dark: #357ABD;
+    --success-color: #50e3c2;
+    --danger-color: #e95e5e;
+    --warning-color: #f5a623;
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --clock-font-family: 'Share Tech Mono', monospace;
+
+    /* Light Theme */
+    --background-color-light: #f7f9fc;
+    --text-color-light: #333;
+    --text-color-secondary-light: #666;
+    --card-bg-light: #ffffff;
+    --border-color-light: #e0e6ed;
+    --shadow-color-light: rgba(0, 0, 0, 0.08);
+    --button-bg-light: #fff;
+    --button-text-light: #333;
+    --button-border-light: #e0e6ed;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* --- THEME --- */
+body.light-mode {
+    --background-color: var(--background-color-light);
+    --text-color: var(--text-color-light);
+    --text-color-secondary: var(--text-color-secondary-light);
+    --card-bg: var(--card-bg-light);
+    --border-color: var(--border-color-light);
+    --shadow-color: var(--shadow-color-light);
+    --button-bg: var(--button-bg-light);
+    --button-text: var(--button-text-light);
+    --button-border: var(--button-border-light);
+}
+
+body.dark-mode {
+    --background-color: #121212;
+    --text-color: #e0e0e0;
+    --text-color-secondary: #a0a0a0;
+    --card-bg: #1e1e1e;
+    --border-color: #333;
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --button-bg: #2a2a2a;
+    --button-text: #e0e0e0;
+    --button-border: #444;
+}
+
+/* --- BUTTONS --- */
+.btn {
+    padding: 10px 22px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    margin-right: 10px;
+}
+.btn:last-child {
+    margin-right: 0;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.btn-primary:hover {
+    background: var(--primary-color-dark);
+    border-color: var(--primary-color-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(74, 144, 226, 0.2);
+}
+
+.btn-success {
+    background: var(--success-color);
+    color: white;
+    border-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background: #34c3a3;
+    border-color: #34c3a3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(80, 227, 194, 0.2);
+}
+
+.btn-danger {
+    background: var(--danger-color);
+    color: white;
+    border-color: var(--danger-color);
+}
+
+.btn-danger:hover {
+    background: #d44a4a;
+    border-color: #d44a4a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(233, 94, 94, 0.2);
+}
+
+.btn-secondary {
+    background: var(--button-bg);
+    color: var(--button-text);
+    border: 1px solid var(--button-border);
+}
+
+.btn-secondary:hover {
+    background: var(--border-color);
+    color: var(--text-color);
+}
+
+/* --- FORMS --- */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    font-size: 14px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 12px 15px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+.form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* --- CARD --- */
+.card {
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+/* --- ALERT --- */
+.alert {
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    display: none;
+    font-weight: 500;
+    border: 1px solid transparent;
+}
+
+.alert-success {
+    background: #e6f9f5;
+    color: #0d6a53;
+    border-color: #b3e6da;
+}
+
+.alert-error {
+    background: #fdeeee;
+    color: #9b2c2c;
+    border-color: #f8c6c6;
+}
+
+/* --- MODAL --- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 10% auto;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    width: 90%;
+    max-width: 550px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateY(-30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-color);
+}
+
+.modal-body {
+    padding: 30px;
+}
+
+.modal-footer {
+    padding: 20px 30px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    background-color: var(--background-color);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+}
+
+.close-btn {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.close-btn:hover,
+.close-btn:focus {
+    color: var(--text-color);
+}

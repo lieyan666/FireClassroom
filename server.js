@@ -401,9 +401,7 @@ initializeDataFiles();
 
 // 启动服务器
 app.listen(PORT, () => {
-    console.log(`🔥 火焰教室服务器运行在 http://localhost:${PORT}`);
-    console.log(`📚 访问教室: http://localhost:${PORT}`);
-    console.log(`⚙️  API文档: http://localhost:${PORT}/api/current-status`);
+    console.log(`FireClassroom running at http://localhost:${PORT}`);
     
     // 初始加载配置
     loadConfig();
@@ -415,16 +413,16 @@ app.listen(PORT, () => {
         app.get('/', (req, res) => {
             res.status(403).send('Forbidden');
         });
-        console.log(`🚀 应用已挂载到: ${appConfig.routePrefix}`);
+        console.log(`应用已挂载到: ${appConfig.routePrefix}`);
     } else {
         app.use('/', mainRouter);
-        console.log(`🚀 应用已挂载到根路径 /`);
+        console.log(`应用已挂载到根路径 /`);
     }
 
     // 监控配置文件变化
     fs.watch(CONFIG_FILE, (eventType, filename) => {
         if (filename && eventType === 'change') {
-            console.log(`🔄 检测到配置文件 '${filename}' 发生变化，正在热重载...`);
+            console.log(`检测到配置文件 '${filename}' 发生变化，正在热重载...`);
             // 注意：热重载路由前缀需要重启服务器才能生效
             loadConfig();
         }
