@@ -1,7 +1,7 @@
 {
   "name": "fire-classroom",
-  "version": "1.0.0",
-  "description": "在线教室系统，支持根据课表时间显示当前课程状态",
+  "version": "1.2.250722",
+  "description": "在线模拟教室系统，支持根据课表时间显示当前课程状态",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -13,8 +13,8 @@
     "education",
     "nodejs"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "lieyan666",
+  "license": "GPL-3.0-only",
   "dependencies": {
     "cors": "^2.8.5",
     "csv-parser": "^3.0.0",

@@ -69,5 +69,6 @@
   "adminUser": {
     "username": "admin",
     "password": "your_secure_password"
-  }
+  },
+  "routePrefix": "/fireclassroom"
 }

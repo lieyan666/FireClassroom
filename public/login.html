@@ -2,7 +2,7 @@
  * @Author: Lieyan
  * @Date: 2025-07-22 15:03:21
  * @LastEditors: Lieyan
- * @LastEditTime: 2025-07-22 15:05:48
+ * @LastEditTime: 2025-07-22 18:05:54
  * @FilePath: /FireClassroom/public/login.html
  * @Description: 
  * @Contact: QQ: 2102177341  Website: lieyan.space  Github: @lieyan666
@@ -13,34 +13,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>FireClassroom - 登录</title>
     <style>
-        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; }
-        .login-container { background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h2 { text-align: center; margin-bottom: 1.5rem; }
-        .input-group { margin-bottom: 1rem; }
-        .input-group label { display: block; margin-bottom: 0.5rem; }
-        .input-group input { width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
-        button { width: 100%; padding: 0.75rem; border: none; border-radius: 4px; background-color: #007bff; color: white; font-size: 1rem; cursor: pointer; }
-        button:hover { background-color: #0056b3; }
-        .error { color: red; text-align: center; margin-top: 1rem; }
+        :root {
+            --primary-color: #4a90e2;
+            --primary-color-dark: #357ABD;
+            --light-gray-color: #f7f9fc;
+            --text-color: #333;
+            --text-color-light: #666;
+            --border-color: #e0e6ed;
+            --danger-color: #e95e5e;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--light-gray-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px var(--shadow-color);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-container h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+        
+        .login-container p {
+            font-size: 14px;
+            color: var(--text-color-light);
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color-light);
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-color-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 144, 226, 0.2);
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            min-height: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h2>Admin Login</h2>
+        <h2>FireClassroom</h2>
+        <p>管理员登录</p>
         <form id="loginForm">
-            <div class="input-group">
-                <label for="username">Username</label>
+            <div class="form-group">
+                <label for="username">用户名</label>
                 <input type="text" id="username" name="username" required>
             </div>
-            <div class="input-group">
-                <label for="password">Password</label>
+            <div class="form-group">
+                <label for="password">密码</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit">Login</button>
+            <button type="submit" class="btn">登录</button>
         </form>
-        <p id="errorMessage" class="error"></p>
+        <p id="errorMessage" class="error-message"></p>
     </div>
 
     <script>
@@ -50,7 +141,7 @@
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
 
-            const response = await fetch('/api/login', {
+            const response = await fetch('./api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -59,7 +150,7 @@
             });
 
             if (response.ok) {
-                window.location.href = '/admin.html';
+                window.location.href = './admin';
             } else {
                 const data = await response.json();
                 errorMessage.textContent = data.message || 'Login failed';

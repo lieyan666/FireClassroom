@@ -5,6 +5,7 @@ const csv = require('csv-parser');
 const cors = require('cors');
 const session = require('express-session');
 const useragent = require('useragent');
+const os = require('os');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 // 中间件
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+// app.use(express.static('public')); // 将在主路由中处理
 app.use(session({
     secret: 'a_secret_key_for_session', // 在生产环境中应使用更安全的密钥
     resave: false,
@@ -48,80 +49,33 @@ if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// 初始化配置文件
-function initializeConfig() {
-    const defaultConfig = {
-        schoolName: "火焰教室",
-        currentSemester: "2024春季学期",
-        timeSlots: [
-            { id: 1, name: "第一节", startTime: "08:00", endTime: "08:45" },
-            { id: 2, name: "第二节", startTime: "08:55", endTime: "09:40" },
-            { id: 3, name: "第三节", startTime: "10:00", endTime: "10:45" },
-            { id: 4, name: "第四节", startTime: "10:55", endTime: "11:40" },
-            { id: 5, name: "第五节", startTime: "14:00", endTime: "14:45" },
-            { id: 6, name: "第六节", startTime: "14:55", endTime: "15:40" },
-            { id: 7, name: "第七节", startTime: "16:00", endTime: "16:45" },
-            { id: 8, name: "第八节", startTime: "16:55", endTime: "17:40" }
-        ],
-        weekdays: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
-    };
+// 全局配置变量
+let appConfig = {};
+
+// 自动从 .example 文件复制配置文件
+function initializeDataFiles() {
+    const filesToInitialize = ['config.json', 'courses.json', 'schedule.csv'];
     
-    if (!fs.existsSync(CONFIG_FILE)) {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2));
-    }
+    filesToInitialize.forEach(file => {
+        const realPath = path.join(DATA_DIR, file);
+        const examplePath = `${realPath}.example`;
+        
+        if (!fs.existsSync(realPath) && fs.existsSync(examplePath)) {
+            console.log(`'${file}' not found. Copying from '${file}.example'...`);
+            fs.copyFileSync(examplePath, realPath);
+        }
+    });
 }
 
-// 初始化课程文件
-function initializeCourses() {
-    const defaultCourses = {
-        courses: [
-            {
-                id: "MATH001",
-                name: "高等数学",
-                teacher: "张教授",
-                classroom: "A101",
-                description: "高等数学基础课程"
-            },
-            {
-                id: "ENG001",
-                name: "大学英语",
-                teacher: "李老师",
-                classroom: "B201",
-                description: "大学英语听说读写"
-            }
-        ]
-    };
-    
-    if (!fs.existsSync(COURSES_FILE)) {
-        fs.writeFileSync(COURSES_FILE, JSON.stringify(defaultCourses, null, 2));
-    }
-}
-
-// 初始化课表文件
-function initializeSchedule() {
-    const defaultSchedule = [
-        "day,timeSlot,courseId,week",
-        "1,1,MATH001,1-16",
-        "1,2,MATH001,1-16",
-        "3,3,ENG001,1-16",
-        "3,4,ENG001,1-16",
-        "5,1,MATH001,1-16",
-        "5,5,ENG001,1-16"
-    ];
-    
-    if (!fs.existsSync(SCHEDULE_FILE)) {
-        fs.writeFileSync(SCHEDULE_FILE, defaultSchedule.join('\n'));
-    }
-}
-
-// 读取配置
-function getConfig() {
+// 加载或重载配置
+function loadConfig() {
     try {
-        const config = fs.readFileSync(CONFIG_FILE, 'utf8');
-        return JSON.parse(config);
+        const configData = fs.readFileSync(CONFIG_FILE, 'utf8');
+        appConfig = JSON.parse(configData);
+        console.log('配置文件已成功加载/重载。');
     } catch (error) {
-        console.error('读取配置文件失败:', error);
-        return null;
+        console.error('读取或解析配置文件失败:', error);
+        // 如果加载失败，可以保留旧的配置或设置一个默认值
     }
 }
 
@@ -163,7 +117,7 @@ function getSchedule() {
 function getCurrentCourseStatus() {
     return new Promise(async (resolve, reject) => {
         try {
-            const config = getConfig();
+            const config = appConfig;
             const courses = getCourses();
             const schedule = await getSchedule();
             
@@ -295,7 +249,7 @@ function getCurrentCourseStatus() {
 
 // 登录接口
 app.post('/api/login', (req, res) => {
-    const config = getConfig();
+    const config = appConfig;
     const { username, password } = req.body;
     if (config && config.adminUser && username === config.adminUser.username && password === config.adminUser.password) {
         req.session.user = { username: config.adminUser.username };
@@ -308,32 +262,55 @@ app.post('/api/login', (req, res) => {
 // 检查是否登录的中间件
 const isAuthenticated = (req, res, next) => {
     if (req.session.user) {
-        next();
+        return next();
+    }
+
+    // 区分API请求和页面请求
+    if (req.accepts('html')) {
+        // 对于页面请求，重定向到登录页
+        return res.redirect('login');
     } else {
-        res.status(401).json({ error: '未授权，请先登录' });
+        // 对于API请求，发送JSON错误
+        return res.status(401).json({ error: '未授权，请先登录' });
     }
 };
 
-// API 路由
+// --- 主路由 ---
+const mainRouter = express.Router();
 
-// 获取配置信息
-app.get('/api/config', isAuthenticated, (req, res) => {
-    const config = getConfig();
-    if (config) {
-        res.json(config);
+// 静态文件服务
+mainRouter.use('/public', express.static(path.join(__dirname, 'public')));
+
+// 动态注入 <base> 标签并提供 HTML 文件
+function serveHtmlWithBaseTag(req, res, filePath) {
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        if (err) {
+            return res.status(500).send('Error reading HTML file.');
+        }
+        const baseTag = `<base href="${appConfig.routePrefix}/">`;
+        const modifiedHtml = data.replace('<head>', `<head>\n    ${baseTag}`);
+        res.send(modifiedHtml);
+    });
+}
+
+// 页面路由
+mainRouter.get('/', (req, res) => serveHtmlWithBaseTag(req, res, path.join(__dirname, 'public', 'index.html')));
+mainRouter.get('/login', (req, res) => serveHtmlWithBaseTag(req, res, path.join(__dirname, 'public', 'login.html')));
+mainRouter.get('/admin', isAuthenticated, (req, res) => serveHtmlWithBaseTag(req, res, path.join(__dirname, 'public', 'admin.html')));
+
+// API 路由
+mainRouter.get('/api/config', isAuthenticated, (req, res) => {
+    if (appConfig) {
+        res.json(appConfig);
     } else {
         res.status(500).json({ error: '无法读取配置文件' });
     }
 });
-
-// 获取课程列表
-app.get('/api/courses', isAuthenticated, (req, res) => {
+mainRouter.get('/api/courses', isAuthenticated, (req, res) => {
     const courses = getCourses();
     res.json(courses);
 });
-
-// 获取课表
-app.get('/api/schedule', isAuthenticated, async (req, res) => {
+mainRouter.get('/api/schedule', isAuthenticated, async (req, res) => {
     try {
         const schedule = await getSchedule();
         res.json({ schedule });
@@ -341,9 +318,7 @@ app.get('/api/schedule', isAuthenticated, async (req, res) => {
         res.status(500).json({ error: '无法读取课表文件' });
     }
 });
-
-// 获取当前课程状态
-app.get('/api/current-status', async (req, res) => {
+mainRouter.get('/api/current-status', async (req, res) => {
     try {
         const status = await getCurrentCourseStatus();
         res.json(status);
@@ -352,9 +327,24 @@ app.get('/api/current-status', async (req, res) => {
         res.status(500).json({ error: '无法获取当前课程状态' });
     }
 });
-
-// 更新配置
-app.post('/api/config', isAuthenticated, (req, res) => {
+mainRouter.get('/api/version', (req, res) => {
+    res.json({
+        gitCommit: getGitCommitHash(),
+        appVersion: require('./package.json').version,
+        hostname: os.hostname()
+    });
+});
+mainRouter.post('/api/login', (req, res) => {
+    const config = appConfig;
+    const { username, password } = req.body;
+    if (config && config.adminUser && username === config.adminUser.username && password === config.adminUser.password) {
+        req.session.user = { username: config.adminUser.username };
+        res.json({ success: true, message: '登录成功' });
+    } else {
+        res.status(401).json({ success: false, message: '用户名或密码错误' });
+    }
+});
+mainRouter.post('/api/config', isAuthenticated, (req, res) => {
     try {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(req.body, null, 2));
         res.json({ success: true, message: '配置更新成功' });
@@ -362,9 +352,7 @@ app.post('/api/config', isAuthenticated, (req, res) => {
         res.status(500).json({ error: '配置更新失败' });
     }
 });
-
-// 更新课程
-app.post('/api/courses', isAuthenticated, (req, res) => {
+mainRouter.post('/api/courses', isAuthenticated, (req, res) => {
     try {
         fs.writeFileSync(COURSES_FILE, JSON.stringify(req.body, null, 2));
         res.json({ success: true, message: '课程更新成功' });
@@ -372,19 +360,14 @@ app.post('/api/courses', isAuthenticated, (req, res) => {
         res.status(500).json({ error: '课程更新失败' });
     }
 });
-
-// 更新课表
-app.post('/api/schedule', isAuthenticated, (req, res) => {
+mainRouter.post('/api/schedule', isAuthenticated, (req, res) => {
     try {
         const { schedule } = req.body;
-        
-        // 将课表数据转换为CSV格式
         const csvHeader = 'day,timeSlot,courseId,week';
-        const csvRows = schedule.map(item => 
+        const csvRows = schedule.map(item =>
             `${item.day},${item.timeSlot},${item.courseId},${item.week}`
         );
         const csvContent = [csvHeader, ...csvRows].join('\n');
-        
         fs.writeFileSync(SCHEDULE_FILE, csvContent);
         res.json({ success: true, message: '课表更新成功' });
     } catch (error) {
@@ -393,16 +376,59 @@ app.post('/api/schedule', isAuthenticated, (req, res) => {
     }
 });
 
+// 原生方式获取Git提交哈希
+function getGitCommitHash() {
+    try {
+        const headPath = path.join(__dirname, '.git', 'HEAD');
+        if (!fs.existsSync(headPath)) return 'N/A';
+        
+        const head = fs.readFileSync(headPath, 'utf8').trim();
+        if (head.startsWith('ref: ')) {
+            const refPath = path.join(__dirname, '.git', head.substring(5));
+            if (!fs.existsSync(refPath)) return 'N/A';
+            return fs.readFileSync(refPath, 'utf8').trim().substring(0, 7);
+        } else {
+            return head.substring(0, 7); // Detached HEAD
+        }
+    } catch (error) {
+        console.error('获取Git提交哈希失败:', error);
+        return 'N/A';
+    }
+}
+
 // 初始化数据文件
-initializeConfig();
-initializeCourses();
-initializeSchedule();
+initializeDataFiles();
 
 // 启动服务器
 app.listen(PORT, () => {
     console.log(`🔥 火焰教室服务器运行在 http://localhost:${PORT}`);
     console.log(`📚 访问教室: http://localhost:${PORT}`);
     console.log(`⚙️  API文档: http://localhost:${PORT}/api/current-status`);
+    
+    // 初始加载配置
+    loadConfig();
+
+    // 动态挂载主路由
+    if (appConfig.routePrefix) {
+        app.use(appConfig.routePrefix, mainRouter);
+        // 根路径返回 403 Forbidden
+        app.get('/', (req, res) => {
+            res.status(403).send('Forbidden');
+        });
+        console.log(`🚀 应用已挂载到: ${appConfig.routePrefix}`);
+    } else {
+        app.use('/', mainRouter);
+        console.log(`🚀 应用已挂载到根路径 /`);
+    }
+
+    // 监控配置文件变化
+    fs.watch(CONFIG_FILE, (eventType, filename) => {
+        if (filename && eventType === 'change') {
+            console.log(`🔄 检测到配置文件 '${filename}' 发生变化，正在热重载...`);
+            // 注意：热重载路由前缀需要重启服务器才能生效
+            loadConfig();
+        }
+    });
 });
 
 module.exports = app;
