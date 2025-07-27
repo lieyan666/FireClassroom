@@ -16,6 +16,43 @@ app.use(cors());
 app.use(express.json());
 // app.use(express.static('public')); // 将在主路由中处理
 
+// 获取真实客户端IP地址的函数
+function getClientIp(req) {
+    // 检查各种可能包含真实IP的HTTP头
+    // 阿里云ESA使用ali-real-client-ip头
+    const aliRealIp = req.headers['ali-real-client-ip'];
+    if (aliRealIp) {
+        return aliRealIp.trim();
+    }
+
+    const forwardedIps = req.headers['x-forwarded-for'];
+    if (forwardedIps) {
+        // X-Forwarded-For可能包含多个IP地址，第一个是客户端真实IP
+        const firstIp = forwardedIps.split(',')[0].trim();
+        if (firstIp) {
+            return firstIp;
+        }
+    }
+
+    // 检查其他可能的头
+    const headersToCheck = [
+        'x-real-ip',
+        'cf-connecting-ip',
+        'true-client-ip',
+        'x-original-forwarded-for'
+    ];
+
+    for (const header of headersToCheck) {
+        const ip = req.headers[header];
+        if (ip) {
+            return ip.trim();
+        }
+    }
+
+    // 如果没有找到任何头，则使用req.ip作为后备
+    return req.ip;
+}
+
 // 日志中间件
 app.use((req, res, next) => {
     res.on('finish', () => {
@@ -27,7 +64,8 @@ app.use((req, res, next) => {
         const beijingTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
         const timestamp = beijingTime.toISOString().replace('T', ' ').substring(0, 19);
 
-        const log = `[${timestamp}] ${req.ip} - ${req.method} ${req.originalUrl} ${res.statusCode} - ${os}, ${browser}`;
+        const clientIp = getClientIp(req);
+        const log = `[${timestamp}] ${clientIp} - ${req.method} ${req.originalUrl} ${res.statusCode} - ${os}, ${browser}`;
         console.log(log);
     });
     next();
