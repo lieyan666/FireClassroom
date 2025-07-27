@@ -5,28 +5,32 @@
       "name": "高等数学",
       "teacher": "张教授1",
       "classroom": "A101",
-      "description": "高等数学基础课程"
+      "description": "高等数学基础课程",
+      "color": "#4285f4"
     },
     {
       "id": "ENG001",
       "name": "大学英语",
       "teacher": "李老师",
       "classroom": "B202",
-      "description": "大学英语听说读写"
+      "description": "大学英语听说读写",
+      "color": "#ea4335"
     },
     {
       "id": "CHS",
       "name": "语文",
       "teacher": "1",
       "classroom": "1",
-      "description": ""
+      "description": "",
+      "color": "#fbbc04"
     },
     {
       "id": "MATH",
       "name": "数学",
       "teacher": "1",
       "classroom": "1",
-      "description": ""
+      "description": "",
+      "color": "#34a853"
     }
   ]
 }

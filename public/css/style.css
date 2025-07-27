@@ -2,7 +2,7 @@
  * @Author: Lieyan
  * @Date: 2025-07-22 18:23:41
  * @LastEditors: Lieyan
- * @LastEditTime: 2025-07-22 22:33:50
+ * @LastEditTime: 2025-07-26 16:00:57
  * @FilePath: /FireClassroom/public/css/style.css
  * @Description: 
  * @Contact: QQ: 2102177341  Website: lieyan.space  Github: @lieyan666
@@ -49,7 +49,7 @@ body.light-mode {
 }
 
 body.dark-mode {
-    --background-color: #121212;
+    --background-color: #000000;
     --text-color: #e0e0e0;
     --text-color-secondary: #a0a0a0;
     --card-bg: #1e1e1e;

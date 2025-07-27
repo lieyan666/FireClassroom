@@ -94,7 +94,17 @@ function loadConfig() {
 function getCourses() {
     try {
         const courses = fs.readFileSync(COURSES_FILE, 'utf8');
-        return JSON.parse(courses);
+        const coursesData = JSON.parse(courses);
+        
+        // 为没有颜色字段的课程添加默认颜色，确保向后兼容
+        if (coursesData.courses && Array.isArray(coursesData.courses)) {
+            coursesData.courses = coursesData.courses.map(course => ({
+                color: '#4285f4', // 默认颜色
+                ...course
+            }));
+        }
+        
+        return coursesData;
     } catch (error) {
         console.error('读取课程文件失败:', error);
         return { courses: [] };

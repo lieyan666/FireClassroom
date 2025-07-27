@@ -124,6 +124,20 @@
             font-size: 12px;
         }
 
+        .color-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid var(--border-color);
+            transition: transform 0.2s ease;
+        }
+
+        .color-indicator:hover {
+            transform: scale(1.2);
+        }
+
         .schedule-grid {
             display: grid;
             grid-template-columns: auto repeat(7, 1fr);
@@ -176,6 +190,89 @@
             color: #5a8dc5;
             margin-top: 4px;
         }
+        
+        .course-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .course-option {
+            display: flex;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .course-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--shadow-color);
+            border-color: var(--primary-color);
+        }
+        
+        .course-option.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px var(--primary-color);
+        }
+        
+        .course-color-bar {
+            width: 6px;
+        }
+        
+        .course-option-content {
+            padding: 15px;
+            flex-grow: 1;
+        }
+        
+        .course-option-content span {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+        
+        .course-option-content small {
+            color: var(--text-color-secondary);
+            font-size: 12px;
+        }
+        
+        /* 滑块提示信息样式 */
+        .alert {
+            position: fixed;
+            top: 20px;
+            right: -400px; /* 初始位置在屏幕右侧外 */
+            z-index: 10000;
+            width: 350px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: right 0.3s ease;
+        }
+        
+        .alert.show {
+            right: 20px; /* 显示时的位置 */
+        }
+        
+        .alert-success {
+            background: #e6f9f5;
+            color: #0d6a53;
+            border-color: #b3e6da;
+        }
+        
+        .alert-error {
+            background: #fdeeee;
+            color: #9b2c2c;
+            border-color: #f8c6c6;
+        }
+        
+        .alert-info {
+            background: #e6f4ff;
+            color: #0d4a6e;
+            border-color: #b3d7f8;
+        }
     </style>
 </head>
 <body class="light-mode">
@@ -197,7 +294,7 @@
             <button class="nav-tab" onclick="showTab('config')">系统配置</button>
         </div>
 
-        <div id="alert" class="alert"></div>
+        <div id="alert" class="alert" style="display: none;"></div>
 
         <!-- 课程管理 -->
         <div id="courses-tab" class="tab-content active">
@@ -209,6 +306,7 @@
                 <table class="table" id="courses-table">
                     <thead>
                         <tr>
+                            <th>颜色</th>
                             <th>课程代码</th>
                             <th>课程名称</th>
                             <th>授课教师</th>
@@ -276,6 +374,7 @@
         let courses = [];
         let schedule = [];
         let config = {};
+        let currentColorCourseId = null; // 用于跟踪当前正在编辑颜色的课程ID
 
         // 标签页切换
         function showTab(tabName) {
@@ -284,6 +383,9 @@
             
             event.target.classList.add('active');
             document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // 记住用户选择的tab
+            localStorage.setItem('adminActiveTab', tabName);
             
             if (tabName === 'schedule') {
                 loadScheduleGrid();
@@ -295,10 +397,69 @@
             const alert = document.getElementById('alert');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
+            
+            // 显示元素
             alert.style.display = 'block';
+            
+            // 触发重排，确保动画效果
+            alert.offsetHeight;
+            
+            // 添加显示类，触发动画
+            alert.classList.add('show');
+            
+            // 3秒后隐藏
             setTimeout(() => {
-                alert.style.display = 'none';
+                alert.classList.remove('show');
+                // 动画结束后隐藏元素
+                setTimeout(() => {
+                    alert.style.display = 'none';
+                }, 300); // 与 CSS transition 时间保持一致
             }, 3000);
+        }
+
+        // 打开颜色选择器
+        function openColorPicker(courseId) {
+            currentColorCourseId = courseId;
+            const course = courses.find(c => c.id === courseId);
+            if (course) {
+                document.getElementById('color-picker').value = course.color || '#4285f4';
+            }
+            document.getElementById('color-modal').style.display = 'block';
+        }
+
+        // 关闭颜色选择器
+        function closeColorModal() {
+            document.getElementById('color-modal').style.display = 'none';
+        }
+
+        // 保存颜色更改
+        async function saveColor() {
+            if (!currentColorCourseId) return;
+            
+            const newColor = document.getElementById('color-picker').value;
+            const course = courses.find(c => c.id === currentColorCourseId);
+            
+            if (course) {
+                course.color = newColor;
+                
+                try {
+                    const response = await fetch('./api/courses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ courses })
+                    });
+                    
+                    if (response.ok) {
+                        showAlert('颜色更新成功');
+                        closeColorModal();
+                        updateUI();
+                    } else {
+                        throw new Error('保存失败');
+                    }
+                } catch (error) {
+                    showAlert('保存颜色失败', 'error');
+                }
+            }
         }
 
         // 加载数据
@@ -351,6 +512,7 @@
             courses.forEach(course => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
+                    <td><div class="color-indicator" style="background-color: ${course.color || '#4285f4'}; width: 20px; height: 20px; border-radius: 50%; cursor: pointer;" onclick="openColorPicker('${course.id}')"></div></td>
                     <td>${course.id}</td>
                     <td>${course.name}</td>
                     <td>${course.teacher}</td>
@@ -425,6 +587,11 @@
                         if (course) {
                             cell.className += ' schedule-course';
                             cell.innerHTML = `${course.name}<br><small>${course.teacher}</small>`;
+                            // 应用课程颜色
+                            if (course.color) {
+                                cell.style.borderLeft = `4px solid ${course.color}`;
+                                cell.style.backgroundColor = `${course.color}20`; // 添加透明度
+                            }
                         }
                     }
                     cell.onclick = () => openCourseModal(day, slot.id);
@@ -455,12 +622,15 @@
                     document.getElementById('course-teacher').value = course.teacher;
                     document.getElementById('course-classroom').value = course.classroom;
                     document.getElementById('course-description').value = course.description;
+                    document.getElementById('course-color').value = course.color || '#4285f4';
                 }
             } else {
                 // 添加模式
                 isEditingCourse = false;
                 title.textContent = '添加新课程';
                 idInput.readOnly = false;
+                // 设置默认颜色
+                document.getElementById('course-color').value = '#4285f4';
             }
 
             modal.style.display = 'block';
@@ -479,7 +649,8 @@
                 name: document.getElementById('course-name').value,
                 teacher: document.getElementById('course-teacher').value,
                 classroom: document.getElementById('course-classroom').value,
-                description: document.getElementById('course-description').value
+                description: document.getElementById('course-description').value,
+                color: document.getElementById('course-color').value
             };
 
             if (isEditingCourse) {
@@ -546,49 +717,122 @@
            currentEditing = { day, timeSlot };
            
            const modal = document.getElementById('course-modal');
-           const select = document.getElementById('modal-course-select');
-           select.innerHTML = '<option value="">-- 选择课程 --</option>';
+           const container = document.getElementById('course-options-container');
+           container.innerHTML = ''; // 清空容器
            
+           // 添加"无课程"选项
+           const noneOption = document.createElement('div');
+           noneOption.className = 'course-option';
+           noneOption.innerHTML = '<div class="course-option-content"><span>无课程</span></div>';
+           noneOption.onclick = () => selectCourseForSchedule(null);
+           noneOption.dataset.courseId = 'null'; // 添加数据属性
+           container.appendChild(noneOption);
+           
+           // 为每门课程创建选项
            courses.forEach(course => {
-               const option = document.createElement('option');
-               option.value = course.id;
-               option.textContent = `${course.name} (${course.teacher})`;
-               select.appendChild(option);
+               const option = document.createElement('div');
+               option.className = 'course-option';
+               option.dataset.courseId = course.id; // 添加数据属性
+               
+               // 创建颜色条
+               const colorBar = document.createElement('div');
+               colorBar.className = 'course-color-bar';
+               colorBar.style.backgroundColor = course.color || '#4285f4';
+               
+               // 创建课程信息
+               const content = document.createElement('div');
+               content.className = 'course-option-content';
+               content.innerHTML = `<span>${course.name}</span><small>${course.teacher}</small>`;
+               
+               option.appendChild(colorBar);
+               option.appendChild(content);
+               
+               option.onclick = () => {
+                   // 移除所有选项的选中状态
+                   container.querySelectorAll('.course-option').forEach(opt => {
+                       opt.classList.remove('selected');
+                   });
+                   // 为当前选项添加选中状态
+                   option.classList.add('selected');
+                   // 选择课程
+                   selectCourseForSchedule(course.id);
+               };
+               container.appendChild(option);
            });
+           
+           // 为"无课程"选项添加点击事件
+           noneOption.onclick = () => {
+               // 移除所有选项的选中状态
+               container.querySelectorAll('.course-option').forEach(opt => {
+                   opt.classList.remove('selected');
+               });
+               // 为当前选项添加选中状态
+               noneOption.classList.add('selected');
+               // 选择课程
+               selectCourseForSchedule(null);
+           };
 
            const existingSchedule = schedule.find(s => parseInt(s.day) === day && parseInt(s.timeSlot) === timeSlot);
+           // 移除所有选项的选中状态
+           container.querySelectorAll('.course-option').forEach(option => {
+               option.classList.remove('selected');
+           });
+           
            if (existingSchedule) {
-               select.value = existingSchedule.courseId;
+               // 如果已有课程安排，高亮显示
+               const selectedOption = container.querySelector(`.course-option[data-course-id="${existingSchedule.courseId}"]`);
+               if (selectedOption) {
+                   selectedOption.classList.add('selected');
+               }
            } else {
-               select.value = "";
+               // 如果没有课程安排，选中"无课程"选项
+               const noneOption = container.querySelector('.course-option[data-course-id="null"]');
+               if (noneOption) {
+                   noneOption.classList.add('selected');
+               }
            }
            
            modal.style.display = 'block';
        }
 
+       // 选择课程并关闭模态框
+       function selectCourseForSchedule(courseId) {
+           try {
+               const { day, timeSlot } = currentEditing;
+
+               // 移除旧的安排
+               schedule = schedule.filter(s =>
+                   !(parseInt(s.day) === day && parseInt(s.timeSlot) === timeSlot)
+               );
+
+               // 如果选择了课程，则添加新的安排
+               if (courseId) {
+                   schedule.push({
+                       day: day.toString(),
+                       timeSlot: timeSlot.toString(),
+                       courseId: courseId,
+                       week: "1-16" // 默认周次
+                   });
+               }
+
+               // 保存更改
+               saveScheduleChangeDirect();
+           } catch (error) {
+               console.error('选择课程时出错:', error);
+               showAlert('选择课程时出错', 'error');
+           }
+       }
+       
+       // 关闭课程选择模态框
        function closeModal() {
-           document.getElementById('course-modal').style.display = 'none';
+           const modal = document.getElementById('course-modal');
+           if (modal) {
+               modal.style.display = 'none';
+           }
        }
 
-       async function saveScheduleChange() {
-           const courseId = document.getElementById('modal-course-select').value;
-           const { day, timeSlot } = currentEditing;
-
-           // 移除旧的安排
-           schedule = schedule.filter(s =>
-               !(parseInt(s.day) === day && parseInt(s.timeSlot) === timeSlot)
-           );
-
-           // 如果选择了课程，则添加新的安排
-           if (courseId) {
-               schedule.push({
-                   day: day.toString(),
-                   timeSlot: timeSlot.toString(),
-                   courseId: courseId,
-                   week: "1-16" // 默认周次
-               });
-           }
-
+       // 直接保存课表更改
+       async function saveScheduleChangeDirect() {
            try {
                const response = await fetch('./api/schedule', {
                    method: 'POST',
@@ -738,7 +982,31 @@
         });
 
         // 页面加载时初始化
-        document.addEventListener('DOMContentLoaded', loadData);
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载数据
+            loadData().then(() => {
+                // 检查是否有记住的tab
+                const savedTab = localStorage.getItem('adminActiveTab');
+                if (savedTab) {
+                    // 激活保存的tab
+                    const tabButton = document.querySelector(`.nav-tab[onclick="showTab('${savedTab}')"]`);
+                    if (tabButton) {
+                        // 移除所有激活状态
+                        document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+                        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                        
+                        // 激活保存的tab
+                        tabButton.classList.add('active');
+                        document.getElementById(savedTab + '-tab').classList.add('active');
+                        
+                        // 如果是课表tab，加载课表网格
+                        if (savedTab === 'schedule') {
+                            loadScheduleGrid();
+                        }
+                    }
+                }
+            });
+        });
 
         // 登出逻辑
         document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -763,15 +1031,13 @@
                 <span class="close-btn" onclick="closeModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <div class="form-group">
-                    <label for="modal-course-select">选择课程</label>
-                    <select id="modal-course-select" class="form-group"></select>
+                <div class="course-options" id="course-options-container">
+                    <!-- 课程选项将在这里动态生成 -->
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeModal()">取消</button>
                 <button class="btn btn-danger" onclick="deleteCurrentSchedule()">删除此项</button>
-                <button class="btn btn-primary" onclick="saveScheduleChange()">保存更改</button>
             </div>
         </div>
     </div>
@@ -807,6 +1073,10 @@
                         <label for="course-description">课程描述</label>
                         <textarea id="course-description"></textarea>
                     </div>
+                    <div class="form-group">
+                        <label for="course-color">课程颜色</label>
+                        <input type="color" id="course-color" value="#4285f4">
+                    </div>
                 </div>
                 <div class="modal-footer">
                      <button type="button" class="btn btn-secondary" onclick="closeCourseEditModal()">取消</button>
@@ -821,5 +1091,22 @@
         console.log('Computed --text-color:', getComputedStyle(document.body).getPropertyValue('--text-color'));
         console.log('Computed --border-color:', getComputedStyle(document.body).getPropertyValue('--border-color'));
     </script>
+    
+    <!-- 颜色选择模态框 -->
+    <div id="color-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>选择课程颜色</h3>
+                <span class="close-btn" onclick="closeColorModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <input type="color" id="color-picker" style="width: 100px; height: 50px; border: none; cursor: pointer;">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeColorModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveColor()">保存</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

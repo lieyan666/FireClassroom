@@ -726,7 +726,7 @@
                 }
 
                 const now = new Date();
-                const todayStr = now.toISOString().split('T'); // "YYYY-MM-DD"
+                const todayStr = now.toISOString().split('T')[0]; // "YYYY-MM-DD"
 
                 // Set audio sources
                 startBellAudio.src = `./public/audio/${config.classStartBell}`;
